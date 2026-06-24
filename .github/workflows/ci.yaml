@@ -38,6 +38,29 @@ jobs:
           version: ${{ env.HELM_VERSION }}
       - run: helm lint --strict .
 
+  docs:
+    name: Docs (README drift + values.schema.json)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HELM_DOCS_VERSION: v1.14.2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Install helm-docs
+        run: |
+          curl -fsSL -o /tmp/hd.tgz \
+            "https://github.com/norwoodj/helm-docs/releases/download/${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION#v}_Linux_x86_64.tar.gz"
+          tar -C /usr/local/bin -xzf /tmp/hd.tgz helm-docs
+          helm-docs --version
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run docs layer (drift + schema)
+        run: bash tests/docs.sh
+
   static:
     name: Static (render + kubeconform + invariants)
     runs-on: ubuntu-latest

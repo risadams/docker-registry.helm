@@ -18,20 +18,22 @@ cmd="${1:-all}"; shift || true
 
 case "$cmd" in
   bootstrap)    bash "$DIR/bootstrap.sh" "$@" ;;
+  docs)         bash "$DIR/docs.sh" "$@" ;;
   static)       bash "$DIR/static.sh" "$@" ;;
   unit)         bash "$DIR/unit.sh" "$@" ;;
   integration)  bash "$DIR/integration.sh" "$@" ;;
   offline)
-    bash "$DIR/static.sh" && bash "$DIR/unit.sh"
+    bash "$DIR/docs.sh" && bash "$DIR/static.sh" && bash "$DIR/unit.sh"
     ;;
   all)
-    bash "$DIR/static.sh" \
+    bash "$DIR/docs.sh" \
+      && bash "$DIR/static.sh" \
       && bash "$DIR/unit.sh" \
       && bash "$DIR/integration.sh"
     ;;
   *)
     echo "unknown command: $cmd" >&2
-    echo "usage: tests/test.sh {bootstrap|static|unit|integration|offline|all} [args]" >&2
+    echo "usage: tests/test.sh {bootstrap|docs|static|unit|integration|offline|all} [args]" >&2
     exit 2
     ;;
 esac

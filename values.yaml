@@ -1,167 +1,207 @@
 # Default values for docker-registry.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
+# -- Number of registry replicas to run. Ignored when `autoscaling.enabled` is true.
 replicaCount: 1
 
+# -- Update strategy for the Deployment (or StatefulSet). Empty uses the
+# Kubernetes default. Example: `{type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}`.
 updateStrategy: {}
   # type: RollingUpdate
   # rollingUpdate:
   #   maxSurge: 1
   #   maxUnavailable: 0
 
+# -- Annotations added to the registry pod (and the garbage-collect pod unless overridden under `garbageCollect`).
 podAnnotations: {}
+# -- Labels added to the registry pod (and the garbage-collect pod unless overridden under `garbageCollect`).
 podLabels: {}
 
-# Mount the ServiceAccount API token into pods. Disabled by default for
+# -- Mount the ServiceAccount API token into the pod. Disabled by default for
 # least-privilege; the registry does not talk to the Kubernetes API.
 automountServiceAccountToken: false
 
 serviceAccount:
+  # -- Create a ServiceAccount for the registry.
   create: false
+  # -- Name of the ServiceAccount to use. When empty and `create` is true, the fullname is used.
   name: ""
+  # -- Annotations to add to the ServiceAccount (e.g. an IRSA role ARN).
   annotations: {}
+  # -- Mount the API token into the ServiceAccount.
   automountServiceAccountToken: false
 
 image:
+  # -- Container image repository.
   repository: registry
+  # -- Container image tag.
   tag: 3.0.0
+  # -- Image pull policy.
   pullPolicy: IfNotPresent
+# -- (list) Image pull secrets for private registries. Applied to the pod(s).
 # imagePullSecrets:
     # - name: docker
-deployment: {}
-  # annotations:
-  # labels:
+
+deployment:
+  # -- Annotations to add to the Deployment/StatefulSet object.
+  annotations: {}
+  # -- Labels to add to the Deployment/StatefulSet object.
+  labels: {}
+
 service:
-  # Whether to create the Service resource. Set to false when the Service is
+  # -- Whether to create the Service resource. Set to false when the Service is
   # managed externally (e.g. by another chart or an Ingress controller).
   create: true
+  # -- Service name. Also used as the Ingress/HTTPRoute backend name. Empty falls back to the fullname.
   name: registry
+  # -- Service type. One of ClusterIP, NodePort, LoadBalancer, ExternalName.
   type: ClusterIP
-  # sessionAffinity: None
-  # sessionAffinityConfig: {}
-  # clusterIP:
+  # -- TCP port the Service exposes.
   port: 5000
+  # -- (string) Static cluster IP (only when `type` is ClusterIP).
+  # clusterIP:
+  # -- (int) Node port (only when `type` is NodePort).
   # nodePort:
+  # -- (string) Load balancer IP (only when `type` is LoadBalancer).
   # loadBalancerIP:
+  # -- (list) Source ranges allowed to reach a LoadBalancer Service.
   # loadBalancerSourceRanges:
+  # -- (string) Session affinity (e.g. ClientIP).
+  # sessionAffinity: None
+  # -- (object) Session affinity configuration.
+  # sessionAffinityConfig: {}
+  # -- (string) IP family policy, e.g. PreferDualStack.
   # ipFamilyPolicy: PreferDualStack
+  # -- (list) IP families, e.g. [IPv4, IPv6].
   # ipFamilies: []
+  # -- Additional annotations for the Service.
   annotations: {}
-  # foo.io/bar: "true"
+  # -- Additional labels for the Service.
   labels: {}
-  # foo.io/baz: "false"
+
 ingress:
+  # -- Create an Ingress for the registry.
   enabled: false
+  # -- IngressClass name.
   className: nginx
+  # -- Ingress path.
   path: /
-  # Used to create an Ingress record.
+  # -- (list) Ingress hostnames.
   hosts:
     - chart-example.local
+  # -- Ingress annotations.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Additional Ingress labels.
   labels: {}
+  # -- (list) Ingress TLS configuration. Secrets must be created in the namespace.
   tls:
-    # Secrets must be manually created in the namespace.
     # - secretName: chart-example-tls
     #   hosts:
     #     - chart-example.local
 
-# Gateway API HTTPRoute support, as an alternative to Ingress. Requires the
-# Gateway API CRDs to be installed in the cluster
-# (https://gateway-api.sigs.k8s.io/).
 httproute:
+  # -- Create a Gateway API HTTPRoute as an alternative to Ingress. Requires the
+  # [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster.
   enabled: false
-  # HTTPRoute apiVersion (defaults to "gateway.networking.k8s.io/v1" when empty)
+  # -- HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`.
   apiVersion: ""
+  # -- HTTPRoute annotations.
   annotations: {}
+  # -- HTTPRoute labels.
   labels: {}
-  # parentRefs reference the Gateway(s) this HTTPRoute is attached to
-  # parentRefs:
+  # -- (list) Gateway(s) this HTTPRoute attaches to (`parentRefs`).
+  parentRefs: []
   #   - name: my-gateway
   #     namespace: gateway-system
   #     sectionName: http
-  parentRefs: []
-  # hostnames matched against the HTTP Host header to select this route
-  # hostnames:
-  #   - chart-example.local
+  # -- (list) Hostnames matched against the HTTP Host header (templated).
   hostnames: []
-  # matches define conditions used to match incoming requests against the rule.
-  # Defaults to a PathPrefix "/" match (mirrors the Ingress behavior above).
+  #   - chart-example.local
+  # -- (list) Request match conditions. Defaults to a PathPrefix `/` match.
   matches:
     - path:
         type: PathPrefix
         value: /
-  # filters applied to requests that match this rule
+  # -- (list) Filters applied to requests matching the rule.
   filters: []
-  # additionalRules (templated) prepends custom HTTPRoute rules
+  # -- (list) Additional templated HTTPRoute rules prepended to the default rule.
   additionalRules: []
+
+# -- Resource requests/limits for the registry container. Left empty by default
+# so the chart runs on small clusters; set explicitly for production.
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
 persistence:
+  # -- Access mode for the PVC.
   accessMode: 'ReadWriteOnce'
+  # -- Use a PersistentVolumeClaim for registry storage (filesystem backend).
   enabled: false
+  # -- Size of the PVC.
   size: 10Gi
+  # -- (string) StorageClass for the PVC. `-` disables dynamic provisioning; unset uses the cluster default.
   # storageClass: '-'
-  # Retain the PVC when the release is deleted (adds the
-  # "helm.sh/resource-policy": keep annotation).
+  # -- Keep the PVC on `helm uninstall` (adds the `helm.sh/resource-policy: keep` annotation).
   keep: true
-  # Bind to a specific PersistentVolume by name.
+  # -- (string) Bind the PVC to a specific PersistentVolume by name.
   # volumeName: ""
-  # Annotations to add to the PersistentVolumeClaim.
+  # -- Annotations to add to the PVC.
   annotations: {}
-  ## Name of an existing PVC to use instead of creating one. Can be templated.
+  # -- (string) Name of an existing PVC to use instead of creating one. Can be templated.
   # existingClaim:
 
-# Use a StatefulSet instead of a Deployment. Useful when each replica needs its
-# own PersistentVolume via volumeClaimTemplates. Default uses a Deployment.
+# -- Deploy a StatefulSet (with `volumeClaimTemplates`) instead of a Deployment.
+# Useful when each replica needs its own PersistentVolume.
 useStatefulSet: false
 
-# set the type of filesystem to use: filesystem, s3
+# -- Storage backend. One of: filesystem, s3, azure, swift.
 storage: filesystem
 
-# set sizeLimit for the emptyDir used when persistence is disabled.
-# Default "0" means no limit.
 emptydir:
+  # -- (string) `sizeLimit` for the emptyDir used when persistence is disabled. `"0"` means no limit.
   size: "0"
 
-# Set this to name of secret for tls certs
+# -- (string) Name of an existing Secret holding TLS certs to serve the registry over HTTPS.
 # tlsSecretName: registry.docker.example.com
 
-# If set, use an existing Secret instead of creating one. The existing Secret
-# must contain the keys expected by your chosen auth/storage/proxy configuration
-# (haSharedSecret, htpasswd, azure*/s3*/swift* keys, proxyUsername/proxyPassword).
+# -- Use an existing Secret instead of creating one. The Secret must contain the
+# keys required by your auth/storage/proxy configuration (haSharedSecret,
+# htpasswd, azure*/s3*/swift* keys, proxyUsername/proxyPassword).
 existingSecret: ""
 
 secrets:
+  # -- Shared secret for registry request signing (HA). Generated and kept stable
+  # across upgrades when left empty (read back from the existing Secret).
   haSharedSecret: ""
+  # -- htpasswd contents to enable basic auth. Generate with
+  # `docker run --rm --entrypoint htpasswd httpd:2 -Bbn user pass`.
   htpasswd: ""
-# Secrets for Azure
-#   azure:
-#     accountName: ""
-#     accountKey: ""
-#     container: ""
-# Secrets for S3 access and secret keys
-# Use a secretRef with keys (accessKey, secretKey) for secrets stored outside the chart
-#   s3:
-#     secretRef: ""
-#     accessKey: ""
-#     secretKey: ""
-# Secrets for Swift username and password
-#   swift:
-#     username: ""
-#     password: ""
+  # -- (object) Azure storage credentials. Keys: accountName, accountKey, container.
+  # azure:
+  #   accountName: ""
+  #   accountKey: ""
+  #   container: ""
+  # -- (object) S3 credentials. Omit entirely to use an EC2 instance profile / IRSA.
+  # Keys: accessKey, secretKey, or secretRef (external Secret with s3AccessKey/s3SecretKey).
+  # s3:
+  #   secretRef: ""
+  #   accessKey: ""
+  #   secretKey: ""
+  # -- (object) Swift credentials. Keys: username, password.
+  # swift:
+  #   username: ""
+  #   password: ""
 
-# Options for s3 storage type:
+# -- (object) S3 backend options (non-secret). Keys: region, regionEndpoint,
+# bucket, rootdirectory, encrypt, secure, forcepathstyle, skipverify.
 # s3:
 #   region: us-east-1
 #   regionEndpoint: https://s3.us-east-1.amazonaws.com
@@ -172,43 +212,57 @@ secrets:
 #   forcepathstyle: true
 #   skipverify: true
 
-# Options for swift storage type:
+# -- (object) Swift backend options (non-secret). Keys: authurl, container.
 # swift:
 #   authurl: http://swift.example.com/
 #   container: my-container
 
+# Configure the registry as a pull-through cache. See
 # https://docs.docker.com/registry/recipes/mirror/
 proxy:
+  # -- Run the registry as a proxy/mirror.
   enabled: false
+  # -- Upstream registry URL to proxy.
   remoteurl: https://registry-1.docker.io
+  # -- Upstream username.
   username: ""
+  # -- Upstream password.
   password: ""
-  # the ref for a secret stored outside of this chart
-  # Keys: proxyUsername, proxyPassword
+  # -- Reference to an external Secret holding proxyUsername/proxyPassword.
   secretRef: ""
 
 metrics:
+  # -- Expose the debug/metrics endpoint and add the metrics port to the Service.
   enabled: false
+  # -- Metrics (debug) port.
   port: 5001
-  # Create a prometheus-operator ServiceMonitor
   serviceMonitor:
+    # -- Create a prometheus-operator ServiceMonitor.
     enabled: false
-    # Namespace where the ServiceMonitor should be installed (i.e. `monitoring`).
-    # Defaults to the namespace where the chart is installed.
+    # -- Namespace to install the ServiceMonitor in. Empty uses the release namespace.
     namespace: ""
+    # -- Labels for the ServiceMonitor (e.g. `release: kube-prometheus-stack` for discovery).
     labels: {}
-  # Create a prometheus-operator PodMonitor as an alternative to the
-  # ServiceMonitor (scrapes pods directly rather than via the Service).
   podMonitor:
+    # -- Create a prometheus-operator PodMonitor as an alternative to the ServiceMonitor.
     enabled: false
+    # -- Labels for the PodMonitor.
     labels: {}
-  # prometheus-operator PrometheusRule defining alerting rules for a Prometheus instance
   prometheusRule:
+    # -- Create a prometheus-operator PrometheusRule.
     enabled: false
+    # -- Labels for the PrometheusRule.
     labels: {}
+    # -- (object) Alerting rules. Renders an empty rule group when omitted.
     rules: {}
 
+# -- Mount path for the registry config inside the container
+# (`/etc/distribution` for registry v3, `/etc/docker/registry` for v2).
 configPath: /etc/distribution
+
+# -- Registry configuration rendered verbatim into `config.yml`. Any
+# [Distribution config](https://distribution.github.io/distribution/about/configuration/)
+# key can be set here (e.g. `storage.redirect.disable`, `storage.delete.enabled`).
 configData:
   version: 0.1
   log:
@@ -233,141 +287,144 @@ configData:
       threshold: 3
 
 containerSecurityContext:
+  # -- Apply the container securityContext.
   enabled: true
+  # -- SELinux options.
   seLinuxOptions: {}
+  # -- Disallow privilege escalation.
   allowPrivilegeEscalation: false
+  # -- Linux capabilities.
   capabilities:
     drop:
       - ALL
+  # -- Run the container privileged.
   privileged: false
+  # -- Mount the root filesystem read-only.
   readOnlyRootFilesystem: true
+  # -- Run as this UID.
   runAsUser: 1000
+  # -- Run as this GID.
   runAsGroup: 1000
+  # -- Require running as a non-root user.
   runAsNonRoot: true
+  # -- Seccomp profile.
   seccompProfile:
     type: RuntimeDefault
 
-# Whether to enable service links, which inject information about the services
-# in the pod's namespace as environment variables.
+# -- Enable service links (inject namespace Service info as env vars).
 enableServiceLinks: true
 
 securityContext:
+  # -- Apply the pod securityContext.
   enabled: true
+  # -- fsGroup change policy.
   fsGroupChangePolicy: Always
+  # -- (list) sysctls.
   sysctls: []
+  # -- (list) Supplemental groups.
   supplementalGroups: []
+  # -- Run as this UID.
   runAsUser: 1000
+  # -- fsGroup applied to mounted volumes.
   fsGroup: 1000
+  # -- Seccomp profile.
   seccompProfile:
     type: RuntimeDefault
 
+# -- (string) PriorityClass name for the pod.
 priorityClassName: ""
 
+# -- PodDisruptionBudget for the registry. Example: `{minAvailable: 1}` or `{maxUnavailable: 1}`.
 podDisruptionBudget: {}
   # maxUnavailable: 1
   # minAvailable: 2
 
 autoscaling:
+  # -- Enable a HorizontalPodAutoscaler (autoscaling/v2, falls back to v1).
   enabled: false
+  # -- Minimum replicas.
   minReplicas: 1
+  # -- Maximum replicas.
   maxReplicas: 2
+  # -- Target average CPU utilization (%).
   targetCPUUtilizationPercentage: 60
-  targetMemoryUtilizationPercentage: 60 # available only on Kubernetes ≥1.23 [required "autoscaling/v2"]
-  behavior: {} # available only on Kubernetes ≥1.23 [required "autoscaling/v2"]
-#   scaleDown:
-#     stabilizationWindowSeconds: 300
-#     policies:
-#     - type: Percent
-#       value: 100
-#       periodSeconds: 15
-#   scaleUp:
-#     stabilizationWindowSeconds: 0
-#     policies:
-#     - type: Percent
-#       value: 100
-#       periodSeconds: 15
-#     - type: Pods
-#       value: 4
-#       periodSeconds: 15
-#     selectPolicy: Max
+  # -- Target average memory utilization (%). Requires autoscaling/v2 (k8s >= 1.23).
+  targetMemoryUtilizationPercentage: 60
+  # -- (object) Scaling behavior. Requires autoscaling/v2 (k8s >= 1.23).
+  behavior: {}
 
+# -- Node selector for pod assignment.
 nodeSelector: {}
 
+# -- Affinity rules for the pod.
 affinity: {}
 
+# -- Topology spread constraints for the pod.
 topologySpreadConstraints: {}
 
+# -- (list) Pod tolerations.
 tolerations: []
 
+# -- (list) Additional volumeMounts for the registry container.
 extraVolumeMounts: []
-## Additional volumeMounts to the registry container.
 #  - mountPath: /secret-data
 #    name: cloudfront-pem-secret
 #    readOnly: true
 
+# -- (list) Additional volumes for the pod.
 extraVolumes: []
-## Additional volumes to the pod.
 #  - name: cloudfront-pem-secret
 #    secret:
 #      secretName: cloudfront-credentials
-#      items:
-#        - key: cloudfront.pem
-#          path: cloudfront.pem
-#          mode: 511
 
+# -- (list) Additional environment variables for the registry container.
 extraEnvVars: []
-## Additional ENV variables to set
 # - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
 #   value: "/var/lib/example"
 
-# # Custom livenessProbe config to override the default
+# -- (object) Override the default livenessProbe entirely.
 # livenessProbe:
 #   tcpSocket:
 #     port: 5000
 
-# # Custom readinessProbe config to override the default
+# -- (object) Override the default readinessProbe entirely.
 # readinessProbe:
 #   tcpSocket:
 #     port: 5000
 
+# -- (list) Init containers added to the pod.
 initContainers: []
-## Init containers to add to the Deployment
 # - name: init
 #   image: busybox
 #   command: []
 
+# -- (list) Extra (sidecar) containers added to the Deployment/StatefulSet.
 extraContainers: []
-## Extra (sidecar) containers to add to the Deployment / StatefulSet
 # - name: istio-proxy
 #   image: auto
-#   securityContext:
-#     allowPrivilegeEscalation: false
-#     capabilities:
-#       drop:
-#         - ALL
 
 garbageCollect:
+  # -- Deploy a CronJob that runs `registry garbage-collect`. Forces the blob
+  # descriptor cache off (cache + GC corrupts the store).
   enabled: false
+  # -- Pass `--delete-untagged` to the garbage collector.
   deleteUntagged: true
+  # -- CronJob schedule (standard cron format).
   schedule: "0 1 * * *"
+  # -- Restart policy for the GC pod.
   restartPolicy: OnFailure
+  # -- Annotations for the GC pod.
   podAnnotations: {}
+  # -- Labels for the GC pod.
   podLabels: {}
+  # -- Resource requests/limits for the GC container.
   resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # Affinity specific to the garbage-collect CronJob pod. Falls back to the
-  # top-level affinity when unset.
+  # -- Affinity for the GC pod. Falls back to the top-level `affinity` when unset.
   affinity: {}
+  # -- (list) Additional environment variables for the GC container.
   extraEnvVars: []
-  ## Additional ENV variables to set on the garbage-collect CronJob
   # - name: MY_GC_CRONJOB_VAR
   #   value: "yes"

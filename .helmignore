@@ -23,6 +23,11 @@
 # Test suite and developer tooling (NOT shipped in the chart package).
 # Anchored with a leading slash so this matches the repo-root tests/ dir only —
 # templates/tests/ (the in-chart `helm test` hook) is intentionally kept.
+# Note: values.schema.json is intentionally NOT ignored — helm reads it for
+# input validation, so it must ship inside the package.
 /tests/
 /Makefile
+/docs/
+/README.md.gotmpl
+/.helm-docs.yaml
 
