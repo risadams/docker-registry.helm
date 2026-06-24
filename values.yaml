@@ -12,10 +12,15 @@ updateStrategy: {}
 podAnnotations: {}
 podLabels: {}
 
+# Mount the ServiceAccount API token into pods. Disabled by default for
+# least-privilege; the registry does not talk to the Kubernetes API.
+automountServiceAccountToken: false
+
 serviceAccount:
   create: false
   name: ""
   annotations: {}
+  automountServiceAccountToken: false
 
 image:
   repository: registry
@@ -25,7 +30,11 @@ image:
     # - name: docker
 deployment: {}
   # annotations:
+  # labels:
 service:
+  # Whether to create the Service resource. Set to false when the Service is
+  # managed externally (e.g. by another chart or an Ingress controller).
+  create: true
   name: registry
   type: ClusterIP
   # sessionAffinity: None
@@ -35,6 +44,8 @@ service:
   # nodePort:
   # loadBalancerIP:
   # loadBalancerSourceRanges:
+  # ipFamilyPolicy: PreferDualStack
+  # ipFamilies: []
   annotations: {}
   # foo.io/bar: "true"
   labels: {}
@@ -55,6 +66,36 @@ ingress:
     # - secretName: chart-example-tls
     #   hosts:
     #     - chart-example.local
+
+# Gateway API HTTPRoute support, as an alternative to Ingress. Requires the
+# Gateway API CRDs to be installed in the cluster
+# (https://gateway-api.sigs.k8s.io/).
+httproute:
+  enabled: false
+  # HTTPRoute apiVersion (defaults to "gateway.networking.k8s.io/v1" when empty)
+  apiVersion: ""
+  annotations: {}
+  labels: {}
+  # parentRefs reference the Gateway(s) this HTTPRoute is attached to
+  # parentRefs:
+  #   - name: my-gateway
+  #     namespace: gateway-system
+  #     sectionName: http
+  parentRefs: []
+  # hostnames matched against the HTTP Host header to select this route
+  # hostnames:
+  #   - chart-example.local
+  hostnames: []
+  # matches define conditions used to match incoming requests against the rule.
+  # Defaults to a PathPrefix "/" match (mirrors the Ingress behavior above).
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  # filters applied to requests that match this rule
+  filters: []
+  # additionalRules (templated) prepends custom HTTPRoute rules
+  additionalRules: []
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -71,12 +112,36 @@ persistence:
   enabled: false
   size: 10Gi
   # storageClass: '-'
+  # Retain the PVC when the release is deleted (adds the
+  # "helm.sh/resource-policy": keep annotation).
+  keep: true
+  # Bind to a specific PersistentVolume by name.
+  # volumeName: ""
+  # Annotations to add to the PersistentVolumeClaim.
+  annotations: {}
+  ## Name of an existing PVC to use instead of creating one. Can be templated.
+  # existingClaim:
+
+# Use a StatefulSet instead of a Deployment. Useful when each replica needs its
+# own PersistentVolume via volumeClaimTemplates. Default uses a Deployment.
+useStatefulSet: false
 
 # set the type of filesystem to use: filesystem, s3
 storage: filesystem
 
+# set sizeLimit for the emptyDir used when persistence is disabled.
+# Default "0" means no limit.
+emptydir:
+  size: "0"
+
 # Set this to name of secret for tls certs
 # tlsSecretName: registry.docker.example.com
+
+# If set, use an existing Secret instead of creating one. The existing Secret
+# must contain the keys expected by your chosen auth/storage/proxy configuration
+# (haSharedSecret, htpasswd, azure*/s3*/swift* keys, proxyUsername/proxyPassword).
+existingSecret: ""
+
 secrets:
   haSharedSecret: ""
   htpasswd: ""
@@ -125,8 +190,16 @@ proxy:
 metrics:
   enabled: false
   port: 5001
-  # Create a prometheus-operator servicemonitor
+  # Create a prometheus-operator ServiceMonitor
   serviceMonitor:
+    enabled: false
+    # Namespace where the ServiceMonitor should be installed (i.e. `monitoring`).
+    # Defaults to the namespace where the chart is installed.
+    namespace: ""
+    labels: {}
+  # Create a prometheus-operator PodMonitor as an alternative to the
+  # ServiceMonitor (scrapes pods directly rather than via the Service).
+  podMonitor:
     enabled: false
     labels: {}
   # prometheus-operator PrometheusRule defining alerting rules for a Prometheus instance
@@ -174,6 +247,10 @@ containerSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+# Whether to enable service links, which inject information about the services
+# in the pod's namespace as environment variables.
+enableServiceLinks: true
+
 securityContext:
   enabled: true
   fsGroupChangePolicy: Always
@@ -181,6 +258,8 @@ securityContext:
   supplementalGroups: []
   runAsUser: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 priorityClassName: ""
 
@@ -216,6 +295,8 @@ nodeSelector: {}
 
 affinity: {}
 
+topologySpreadConstraints: {}
+
 tolerations: []
 
 extraVolumeMounts: []
@@ -239,16 +320,37 @@ extraEnvVars: []
 # - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
 #   value: "/var/lib/example"
 
+# # Custom livenessProbe config to override the default
+# livenessProbe:
+#   tcpSocket:
+#     port: 5000
+
+# # Custom readinessProbe config to override the default
+# readinessProbe:
+#   tcpSocket:
+#     port: 5000
+
 initContainers: []
 ## Init containers to add to the Deployment
 # - name: init
 #   image: busybox
 #   command: []
 
+extraContainers: []
+## Extra (sidecar) containers to add to the Deployment / StatefulSet
+# - name: istio-proxy
+#   image: auto
+#   securityContext:
+#     allowPrivilegeEscalation: false
+#     capabilities:
+#       drop:
+#         - ALL
+
 garbageCollect:
   enabled: false
   deleteUntagged: true
   schedule: "0 1 * * *"
+  restartPolicy: OnFailure
   podAnnotations: {}
   podLabels: {}
   resources: {}
@@ -262,3 +364,10 @@ garbageCollect:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+  # Affinity specific to the garbage-collect CronJob pod. Falls back to the
+  # top-level affinity when unset.
+  affinity: {}
+  extraEnvVars: []
+  ## Additional ENV variables to set on the garbage-collect CronJob
+  # - name: MY_GC_CRONJOB_VAR
+  #   value: "yes"

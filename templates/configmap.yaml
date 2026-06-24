@@ -1,13 +1,14 @@
+{{- /* Blob caching and the garbage-collection cronjob do not mix */ -}}
+{{- if .Values.garbageCollect.enabled -}}
+{{- $_ := set .Values.configData.storage.cache "blobdescriptor" "disabled" -}}
+{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "docker-registry.fullname" . }}-config
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    app: {{ template "docker-registry.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    heritage: {{ .Release.Service }}
-    release: {{ .Release.Name }}
+    {{- include "docker-registry.labels" . | nindent 4 }}
 data:
   config.yml: |-
 {{ toYaml .Values.configData | indent 4 }}

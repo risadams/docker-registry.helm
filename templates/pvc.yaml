@@ -1,27 +1,38 @@
 {{- if .Values.persistence.enabled }}
 {{- if not .Values.persistence.existingClaim -}}
+{{- if not .Values.useStatefulSet -}}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ template "docker-registry.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
+  {{- if or .Values.persistence.keep .Values.persistence.annotations }}
+  annotations:
+  {{- if .Values.persistence.keep }}
+    "helm.sh/resource-policy": keep
+  {{- end }}
+  {{- with .Values.persistence.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   labels:
-    app: {{ template "docker-registry.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "docker-registry.labels" . | nindent 4 }}
 spec:
   accessModes:
     - {{ .Values.persistence.accessMode | quote }}
   resources:
     requests:
       storage: {{ .Values.persistence.size | quote }}
-{{- if .Values.persistence.storageClass }}
-{{- if (eq "-" .Values.persistence.storageClass) }}
+  {{- if .Values.persistence.storageClass }}
+  {{- if (eq "-" .Values.persistence.storageClass) }}
   storageClassName: ""
-{{- else }}
+  {{- else }}
   storageClassName: "{{ .Values.persistence.storageClass }}"
-{{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.persistence.volumeName }}
+  volumeName: {{ .Values.persistence.volumeName | quote }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- end -}}

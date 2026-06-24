@@ -5,23 +5,21 @@ metadata:
   name: {{ template "docker-registry.fullname" . }}-garbage-collector
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    app: {{ template "docker-registry.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "docker-registry.labels" . | nindent 4 }}
 spec:
   schedule: {{ .Values.garbageCollect.schedule | quote }}
   jobTemplate:
     metadata:
       labels:
-        app: {{ template "docker-registry.name" . }}
-        release: {{ .Release.Name }}
+        {{- include "docker-registry.match-labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.existingSecret }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
@@ -29,7 +27,7 @@ spec:
       template:
         metadata:
           labels:
-            release: {{ .Release.Name }}
+            {{- include "docker-registry.match-labels" . | nindent 12 }}
             {{- if or .Values.podLabels .Values.garbageCollect.podLabels }}
             {{- toYaml (merge (.Values.garbageCollect.podLabels | default (dict)) (.Values.podLabels | default (dict))) | nindent 12 }}
             {{- end }}
@@ -64,15 +62,20 @@ spec:
               {{- toYaml .Values.garbageCollect.resources | nindent 16 }}
               {{- end }}
               env: {{ include "docker-registry.envs" . | nindent 16 }}
+              {{- with .Values.garbageCollect.extraEnvVars }}
+              {{- toYaml . | nindent 16 }}
+              {{- end }}
               {{- if .Values.containerSecurityContext.enabled }}
               securityContext: {{ omit .Values.containerSecurityContext "enabled" | toYaml | nindent 16 }}
               {{- end }}
               volumeMounts: {{ include "docker-registry.volumeMounts" . | nindent 16 }}
-          restartPolicy: OnFailure
+          restartPolicy: {{ .Values.garbageCollect.restartPolicy }}
           {{- if .Values.nodeSelector }}
           nodeSelector: {{ toYaml .Values.nodeSelector | nindent 12 }}
           {{- end }}
-          {{- if .Values.affinity }}
+          {{- if .Values.garbageCollect.affinity }}
+          affinity: {{ toYaml .Values.garbageCollect.affinity | nindent 12 }}
+          {{- else if .Values.affinity }}
           affinity: {{ toYaml .Values.affinity | nindent 12 }}
           {{- end }}
           {{- if .Values.tolerations }}
