@@ -55,7 +55,7 @@ jobs:
             "https://github.com/norwoodj/helm-docs/releases/download/${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION#v}_Linux_x86_64.tar.gz"
           tar -C /usr/local/bin -xzf /tmp/hd.tgz helm-docs
           helm-docs --version
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Run docs layer (drift + schema)
@@ -76,7 +76,7 @@ jobs:
             "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
           tar -C /usr/local/bin -xzf /tmp/kc.tgz kubeconform
           kubeconform -v
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install pyyaml
@@ -94,7 +94,7 @@ jobs:
           version: ${{ env.HELM_VERSION }}
       - name: Install helm-unittest plugin
         run: helm plugin install https://github.com/helm-unittest/helm-unittest
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Run unit layer
