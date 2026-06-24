@@ -266,11 +266,27 @@ scenario_htpasswd() {
   stop_port_forward
 }
 
+# upstream #187: haSharedSecret must stay stable across helm upgrades (a
+# regenerating value causes ArgoCD OutOfSync churn and breaks HA request signing).
+# This needs a live cluster because the fix relies on `lookup` reading the
+# existing Secret, which is empty during `helm template`.
+scenario_secret_stable() {
+  local ns="$1"
+  install_release "$ns" "$SCEN_DIR/default.yaml" >/dev/null
+  local s1; s1="$(kubectl get secret -n "$ns" "${RELEASE}-docker-registry-secret" -o jsonpath='{.data.haSharedSecret}' 2>/dev/null)"
+  assert_contains "secret-stable: haSharedSecret generated on install" "$s1" "="
+  helm upgrade "$RELEASE" "$CHART_DIR" -n "$ns" -f "$SCEN_DIR/default.yaml" \
+    --set podAnnotations.bump=1 --wait --timeout "$TIMEOUT" >/dev/null 2>&1
+  local s2; s2="$(kubectl get secret -n "$ns" "${RELEASE}-docker-registry-secret" -o jsonpath='{.data.haSharedSecret}' 2>/dev/null)"
+  assert_eq "secret-stable: haSharedSecret unchanged after upgrade" "$s1" "$s2"
+}
+
 # ===========================================================================
 # Runner
 # ===========================================================================
 ALL_SCENARIOS=(default service_create_false persistence statefulset \
-  garbage_collect metrics ingress existing_secret autoscaling sidecars htpasswd)
+  garbage_collect metrics ingress existing_secret autoscaling sidecars \
+  secret_stable htpasswd)
 
 run_scenario() {
   local name="$1"

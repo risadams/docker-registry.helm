@@ -75,6 +75,58 @@ tests:
           content:
             name: REGISTRY_STORAGE_S3_BUCKET
             value: my-bucket
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: s3AccessKey
+
+  # upstream #71: S3 via an IAM instance profile / IRSA (no secrets.s3) must
+  # render without a nil-pointer and must NOT inject static-credential env vars.
+  - it: omits S3 credential env vars when no secrets.s3 is set
+    template: templates/deployment.yaml
+    set:
+      storage: s3
+      s3:
+        region: us-east-1
+        bucket: my-bucket
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_REGION
+            value: us-east-1
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: s3AccessKey
+
+  - it: uses an external s3 secretRef when provided
+    template: templates/deployment.yaml
+    set:
+      storage: s3
+      s3:
+        region: us-east-1
+        bucket: my-bucket
+      secrets:
+        s3:
+          secretRef: my-external-s3
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: my-external-s3
+                key: s3AccessKey
 
   - it: configures proxy remote url when proxy is enabled
     template: templates/deployment.yaml

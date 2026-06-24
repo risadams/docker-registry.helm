@@ -252,7 +252,55 @@ helm install my-registry docker-registry/docker-registry \
   --set persistence.storageClass=gp2
 ```
 
+### Arbitrary registry configuration via `configData`
+
+`configData` is rendered verbatim into the registry's `config.yml`, so any
+Distribution config key can be set without a dedicated value. For example, to
+disable storage redirects (useful when S3 is not directly reachable by clients):
+
+```yaml
+configData:
+  storage:
+    redirect:
+      disable: true
+```
+
+The same approach covers options like `storage.maintenance.uploadpurging`,
+`storage.delete.enabled`, and custom `http.headers`.
+
+### S3 with an IAM instance profile / IRSA
+
+When the node or pod identity already grants S3 access, omit `secrets.s3`
+entirely — the chart will not emit static-credential env vars and the registry
+falls back to the AWS credential chain:
+
+```yaml
+storage: s3
+s3:
+  region: us-east-1
+  bucket: my-registry-bucket
+# no secrets.s3 block -> uses the instance profile / IRSA role
+```
+
 ## Changelog
+
+### 4.0.1
+
+Bug-fix release addressing issues still open upstream:
+
+- **haSharedSecret no longer regenerates on every render** (upstream #187). The
+  value is now read back from the existing in-cluster Secret via `lookup` and
+  only generated on first install, eliminating ArgoCD OutOfSync churn and the HA
+  request-signing breakage caused by a rotating secret.
+- **S3 with an IAM instance profile / IRSA no longer fails to template**
+  (upstream #71). The S3 credential env vars and Secret keys are guarded so an
+  unset `secrets.s3` falls back to the AWS credential chain instead of a nil
+  pointer error.
+- **`prometheusRule.enabled` without rules now applies cleanly** (upstream #150).
+  An empty but valid `groups: []` is emitted instead of an empty `spec:` that the
+  API rejected.
+- Documented `configData` passthrough for arbitrary registry config such as
+  `storage.redirect.disable` (upstream #91) and the S3 instance-profile pattern.
 
 ### 4.0.0
 

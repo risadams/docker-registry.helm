@@ -159,16 +159,22 @@ readinessProbe:
   value: {{ required ".Values.s3.region is required" .Values.s3.region }}
 - name: REGISTRY_STORAGE_S3_BUCKET
   value: {{ required ".Values.s3.bucket is required" .Values.s3.bucket }}
-{{- if or (and .Values.secrets.s3.secretKey .Values.secrets.s3.accessKey) .Values.secrets.s3.secretRef }}
+{{- /*
+  Only wire S3 credential env vars when credentials are actually configured.
+  Guard .Values.secrets.s3 itself first: when relying on an EC2/IRSA instance
+  profile, secrets.s3 is unset and dereferencing its keys would be a nil pointer.
+*/}}
+{{- $s3secrets := .Values.secrets.s3 | default dict }}
+{{- if or (and $s3secrets.secretKey $s3secrets.accessKey) $s3secrets.secretRef }}
 - name: REGISTRY_STORAGE_S3_ACCESSKEY
   valueFrom:
     secretKeyRef:
-      name: {{ if .Values.secrets.s3.secretRef }}{{ .Values.secrets.s3.secretRef }}{{ else }}{{ template "docker-registry.secretName" . }}{{ end }}
+      name: {{ if $s3secrets.secretRef }}{{ $s3secrets.secretRef }}{{ else }}{{ template "docker-registry.secretName" . }}{{ end }}
       key: s3AccessKey
 - name: REGISTRY_STORAGE_S3_SECRETKEY
   valueFrom:
     secretKeyRef:
-      name: {{ if .Values.secrets.s3.secretRef }}{{ .Values.secrets.s3.secretRef }}{{ else }}{{ template "docker-registry.secretName" . }}{{ end }}
+      name: {{ if $s3secrets.secretRef }}{{ $s3secrets.secretRef }}{{ else }}{{ template "docker-registry.secretName" . }}{{ end }}
       key: s3SecretKey
 {{- end -}}
 
