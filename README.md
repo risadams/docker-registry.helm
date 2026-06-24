@@ -7,7 +7,7 @@ This directory contains a Kubernetes chart to deploy a private Docker Registry.
 > It incorporates the actionable community pull requests and fixes that were left
 > open upstream. See the [Changelog](#changelog) for what changed.
 
-![Version: 4.0.1](https://img.shields.io/badge/Version-4.0.1-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
+![Version: 4.0.1](https://img.shields.io/badge/Version-4.0.1-informational?style=flat-square) ![AppVersion: 3.1.1](https://img.shields.io/badge/AppVersion-3.1.1-informational?style=flat-square)
 
 ## Prerequisites Details
 
@@ -63,7 +63,7 @@ not this table.
 | serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount (e.g. an IRSA role ARN). |
 | serviceAccount.automountServiceAccountToken | bool | `false` | Mount the API token into the ServiceAccount. |
 | image.repository | string | `"registry"` | Container image repository. |
-| image.tag | string | `"3.0.0"` | Container image tag. |
+| image.tag | string | `"3.1.1"` | Container image tag. |
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | deployment.annotations | object | `{}` | Annotations to add to the Deployment/StatefulSet object. |
 | deployment.labels | object | `{}` | Labels to add to the Deployment/StatefulSet object. |
@@ -422,6 +422,8 @@ New features:
   settings go through `configData.redis`.
 - Documented token-auth/RBAC (upstream #197) and private-CA trust (upstream #64)
   patterns using `configData.auth.token` and `extraVolumes`/`extraVolumeMounts`.
+- **Updated the registry image to 3.1.1** (from 3.0.0) — picks up the stable
+  security fixes for CVE-2026-35172 (3.1.0) and CVE-2026-41888 (3.1.1).
 
 ### 4.0.0
 

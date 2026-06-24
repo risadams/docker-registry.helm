@@ -124,8 +124,8 @@ scenario_garbage_collect() {
     return 0
   fi
   local reg="localhost:30578"
-  docker pull registry:3.0.0 >/dev/null 2>&1 || true
-  docker tag registry:3.0.0 "$reg/gctest:ci" >/dev/null 2>&1
+  docker pull registry:3.1.1 >/dev/null 2>&1 || true
+  docker tag registry:3.1.1 "$reg/gctest:ci" >/dev/null 2>&1
   if ! docker push "$reg/gctest:ci" >/dev/null 2>&1; then
     warn "garbage-collect: seed push failed; skipping manual GC run"
     docker rmi "$reg/gctest:ci" >/dev/null 2>&1 || true
@@ -254,8 +254,8 @@ scenario_htpasswd() {
   local reg="localhost:30577"
   if echo "testpass" | docker login "$reg" -u testuser --password-stdin >/dev/null 2>&1; then
     ok "htpasswd: docker login"
-    docker pull registry:3.0.0 >/dev/null 2>&1 || true
-    docker tag registry:3.0.0 "$reg/probe:ci" >/dev/null 2>&1
+    docker pull registry:3.1.1 >/dev/null 2>&1 || true
+    docker tag registry:3.1.1 "$reg/probe:ci" >/dev/null 2>&1
     if docker push "$reg/probe:ci" >/dev/null 2>&1; then ok "htpasswd: docker push"; else ko "htpasswd: docker push"; fi
     docker rmi "$reg/probe:ci" >/dev/null 2>&1 || true
     if docker pull "$reg/probe:ci" >/dev/null 2>&1; then ok "htpasswd: docker pull"; else ko "htpasswd: docker pull"; fi
