@@ -154,6 +154,70 @@ tests:
             name: CUSTOM
             value: yes-please
 
+  # upstream #95: redis blob cache password is injected from the Secret, never
+  # placed in the ConfigMap.
+  - it: injects REGISTRY_REDIS_PASSWORD from the chart secret
+    template: templates/deployment.yaml
+    set:
+      redis:
+        password: s3cr3t
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: redisPassword
+
+  - it: sources the redis password from an external secretRef when set
+    template: templates/deployment.yaml
+    set:
+      redis:
+        password: s3cr3t
+        secretRef: external-redis
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: external-redis
+                key: redisPassword
+
+  - it: omits the redis password env when no password is set
+    template: templates/deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+
+  # upstream #112: inline tls.crt/tls.key serve HTTPS from a chart-created Secret.
+  - it: serves HTTPS from inline tls material
+    template: templates/deployment.yaml
+    set:
+      tls:
+        crt: CERTDATA
+        key: KEYDATA
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /etc/ssl/docker/tls.crt
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-cert
+            secret:
+              secretName: RELEASE-NAME-docker-registry-tls
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+
   - it: mounts tls cert volume and env when tlsSecretName is set
     template: templates/deployment.yaml
     set:

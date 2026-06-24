@@ -2,7 +2,7 @@
 {{- $svcName := .Values.service.name | default (include "docker-registry.fullname" .) -}}
 {{- $scheme := "http" -}}
 {{- $wgetOpts := "" -}}
-{{- if .Values.tlsSecretName -}}
+{{- if (include "docker-registry.tlsSecretName" .) -}}
 {{- $scheme = "https" -}}
 {{- $wgetOpts = "--no-check-certificate" -}}
 {{- end -}}

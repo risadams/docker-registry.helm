@@ -98,6 +98,7 @@ not this table.
 | useStatefulSet | bool | `false` | Deploy a StatefulSet (with `volumeClaimTemplates`) instead of a Deployment. Useful when each replica needs its own PersistentVolume. |
 | storage | string | `"filesystem"` | Storage backend. One of: filesystem, s3, azure, swift. |
 | emptydir.size | string | `"0"` | `sizeLimit` for the emptyDir used when persistence is disabled. `"0"` means no limit. |
+| tls | object | `{}` | Inline TLS material. When `tls.crt` and `tls.key` are both set (and `tlsSecretName` is unset), the chart creates a `<fullname>-tls` Secret and serves HTTPS from it. Keys: crt, key (PEM strings). |
 | existingSecret | string | `""` | Use an existing Secret instead of creating one. The Secret must contain the keys required by your auth/storage/proxy configuration (haSharedSecret, htpasswd, azure*/s3*/swift* keys, proxyUsername/proxyPassword). |
 | secrets.haSharedSecret | string | `""` | Shared secret for registry request signing (HA). Generated and kept stable across upgrades when left empty (read back from the existing Secret). |
 | secrets.htpasswd | string | `""` | htpasswd contents to enable basic auth. Generate with `docker run --rm --entrypoint htpasswd httpd:2 -Bbn user pass`. |
@@ -107,6 +108,8 @@ not this table.
 | proxy.username | string | `""` | Upstream username. |
 | proxy.password | string | `""` | Upstream password. |
 | proxy.secretRef | string | `""` | Reference to an external Secret holding proxyUsername/proxyPassword. |
+| redis.password | string | `""` | Redis password. Stored in the chart Secret (or `secretRef`) and injected as `REGISTRY_REDIS_PASSWORD`. Leave empty for password-less Redis. |
+| redis.secretRef | string | `""` | Reference to an external Secret with a `redisPassword` key, instead of storing `password` in the chart Secret. |
 | metrics.enabled | bool | `false` | Expose the debug/metrics endpoint and add the metrics port to the Service. |
 | metrics.port | int | `5001` | Metrics (debug) port. |
 | metrics.serviceMonitor.enabled | bool | `false` | Create a prometheus-operator ServiceMonitor. |
@@ -281,6 +284,101 @@ s3:
 # no secrets.s3 block -> uses the instance profile / IRSA role
 ```
 
+### Serving HTTPS (TLS)
+
+Two ways to terminate TLS at the registry:
+
+- **Existing Secret** — reference a `kubernetes.io/tls` Secret you manage
+  (cert-manager, etc.):
+
+  ```yaml
+  tlsSecretName: registry-tls
+  ```
+
+- **Inline cert/key** — let the chart create the Secret from PEM material
+  (`tlsSecretName` takes precedence if both are set):
+
+  ```yaml
+  tls:
+    crt: |
+      -----BEGIN CERTIFICATE-----
+      ...
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      ...
+  ```
+
+Either way the registry mounts the cert at `/etc/ssl/docker`, serves HTTPS, and
+the probes switch to the HTTPS scheme.
+
+### Redis blob descriptor cache
+
+For multi-replica HA, back the blob descriptor cache with Redis. Put the
+connection settings in `configData` (rendered into `config.yml`) and the
+password under `redis` so it stays out of the ConfigMap (injected as
+`REGISTRY_REDIS_PASSWORD`):
+
+```yaml
+configData:
+  storage:
+    cache:
+      blobdescriptor: redis
+  redis:
+    addr: redis-master:6379
+    db: 0
+    dialtimeout: 10ms
+    readtimeout: 10ms
+    writetimeout: 10ms
+redis:
+  password: my-redis-password
+  # or reference an external Secret with a redisPassword key:
+  # secretRef: my-redis-secret
+```
+
+### Token authentication / RBAC
+
+Delegate authorization to an external token server by passing the registry's
+[`auth.token`](https://distribution.github.io/distribution/about/configuration/#token)
+config through `configData`, and mount the issuer's root cert bundle with
+`extraVolumes`/`extraVolumeMounts`:
+
+```yaml
+configData:
+  auth:
+    token:
+      realm: "https://auth.example.com/token"
+      service: "container_registry"
+      issuer: "auth-server"
+      rootcertbundle: "/etc/docker/registry/auth.crt"
+extraVolumes:
+  - name: auth-cert
+    secret:
+      secretName: registry-auth-cert
+extraVolumeMounts:
+  - name: auth-cert
+    mountPath: /etc/docker/registry/auth.crt
+    subPath: auth.crt
+    readOnly: true
+```
+
+### Trusting a private CA
+
+To make the registry (e.g. as a proxy/mirror) trust an upstream served by a
+private CA, mount the CA bundle into the system trust store via `extraVolumes`/
+`extraVolumeMounts`:
+
+```yaml
+extraVolumes:
+  - name: private-ca
+    configMap:
+      name: my-private-ca   # contains ca.crt
+extraVolumeMounts:
+  - name: private-ca
+    mountPath: /etc/ssl/certs/my-private-ca.crt
+    subPath: ca.crt
+    readOnly: true
+```
+
 ## Testing
 
 The chart ships an in-cluster smoke test:
@@ -313,6 +411,17 @@ Bug-fix release addressing issues still open upstream:
 - Documented `configData` passthrough for arbitrary registry config such as
   `storage.redirect.disable` (upstream #91) and the S3 instance-profile pattern.
 - Added `values.schema.json` validation and helm-docs-generated parameter docs.
+
+New features:
+
+- **In-chart TLS** (upstream #112). Set `tls.crt`/`tls.key` to have the chart
+  create the `kubernetes.io/tls` Secret it serves HTTPS from, instead of
+  pre-creating one and pointing `tlsSecretName` at it.
+- **Redis blob descriptor cache** (upstream #95). `redis.password` /
+  `redis.secretRef` inject `REGISTRY_REDIS_PASSWORD` from a Secret; connection
+  settings go through `configData.redis`.
+- Documented token-auth/RBAC (upstream #197) and private-CA trust (upstream #64)
+  patterns using `configData.auth.token` and `extraVolumes`/`extraVolumeMounts`.
 
 ### 4.0.0
 

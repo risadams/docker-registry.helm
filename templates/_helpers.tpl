@@ -85,7 +85,7 @@ livenessProbe:
 {{ .Values.livenessProbe | toYaml | indent 2 }}
 {{- else }}
   httpGet:
-{{- if .Values.tlsSecretName }}
+{{- if (include "docker-registry.tlsSecretName" .) }}
     scheme: HTTPS
 {{- end }}
     path: /
@@ -104,11 +104,26 @@ readinessProbe:
 {{ .Values.readinessProbe | toYaml | indent 2 }}
 {{- else }}
   httpGet:
-{{- if .Values.tlsSecretName }}
+{{- if (include "docker-registry.tlsSecretName" .) }}
     scheme: HTTPS
 {{- end }}
     path: /
     port: 5000
+{{- end -}}
+{{- end -}}
+
+{{/*
+Resolve the TLS Secret name to serve HTTPS, or empty string when TLS is off.
+Precedence: an explicit existing Secret (`tlsSecretName`) wins; otherwise, when
+both `tls.crt` and `tls.key` are provided the chart creates `<fullname>-tls`
+(see tls-secret.yaml) and uses that. Returning a string means this helper also
+works as the "is TLS enabled?" check in an `if`.
+*/}}
+{{- define "docker-registry.tlsSecretName" -}}
+{{- if .Values.tlsSecretName -}}
+{{- .Values.tlsSecretName -}}
+{{- else if and .Values.tls .Values.tls.crt .Values.tls.key -}}
+{{- printf "%s-tls" (include "docker-registry.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 
@@ -128,7 +143,7 @@ readinessProbe:
   value: "/auth/htpasswd"
 {{- end }}
 
-{{- if .Values.tlsSecretName }}
+{{- if (include "docker-registry.tlsSecretName" .) }}
 - name: REGISTRY_HTTP_TLS_CERTIFICATE
   value: /etc/ssl/docker/tls.crt
 - name: REGISTRY_HTTP_TLS_KEY
@@ -245,6 +260,19 @@ readinessProbe:
   value: "true"
 {{- end -}}
 
+{{- /*
+  Redis blob descriptor cache. The non-secret redis connection settings come
+  from `configData.redis` (rendered into config.yml); the password is injected
+  from a Secret here so it never lands in the ConfigMap.
+*/}}
+{{- if .Values.redis.password }}
+- name: REGISTRY_REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ if .Values.redis.secretRef }}{{ .Values.redis.secretRef }}{{ else }}{{ template "docker-registry.secretName" . }}{{ end }}
+      key: redisPassword
+{{- end -}}
+
 {{- with .Values.extraEnvVars }}
 {{ toYaml . }}
 {{- end -}}
@@ -266,7 +294,7 @@ readinessProbe:
   mountPath: /var/lib/registry/
 {{- end }}
 
-{{- if .Values.tlsSecretName }}
+{{- if (include "docker-registry.tlsSecretName" .) }}
 - mountPath: /etc/ssl/docker
   name: tls-cert
   readOnly: true
@@ -303,10 +331,10 @@ readinessProbe:
   {{- end -}}
 {{- end }}
 
-{{- if .Values.tlsSecretName }}
+{{- if (include "docker-registry.tlsSecretName" .) }}
 - name: tls-cert
   secret:
-    secretName: {{ .Values.tlsSecretName }}
+    secretName: {{ include "docker-registry.tlsSecretName" . }}
 {{- end }}
 
 {{- with .Values.extraVolumes }}

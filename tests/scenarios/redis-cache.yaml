@@ -1,0 +1,17 @@
+# Scenario: Redis blob descriptor cache (upstream #95).
+# RENDER/SCHEMA/UNIT ONLY — not in integration.sh's scenario list (it points at a
+# Redis that isn't deployed, so a live registry would crash-loop). Validates that
+# the password is injected from the chart Secret (not the ConfigMap) and the
+# redis connection block renders into config.yml.
+configData:
+  storage:
+    cache:
+      blobdescriptor: redis
+  redis:
+    addr: redis-master:6379
+    db: 0
+    dialtimeout: 10ms
+    readtimeout: 10ms
+    writetimeout: 10ms
+redis:
+  password: test-redis-password

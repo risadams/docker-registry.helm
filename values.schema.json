@@ -127,6 +127,14 @@
     },
 
     "tlsSecretName": { "type": "string" },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "crt": { "type": "string" },
+        "key": { "type": "string" }
+      }
+    },
     "existingSecret": { "type": "string" },
 
     "secrets": {
@@ -190,6 +198,15 @@
         "enabled": { "type": "boolean" },
         "remoteurl": { "type": "string" },
         "username": { "type": "string" },
+        "password": { "type": "string" },
+        "secretRef": { "type": "string" }
+      }
+    },
+
+    "redis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
         "password": { "type": "string" },
         "secretRef": { "type": "string" }
       }

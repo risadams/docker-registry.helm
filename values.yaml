@@ -169,8 +169,21 @@ emptydir:
   # -- (string) `sizeLimit` for the emptyDir used when persistence is disabled. `"0"` means no limit.
   size: "0"
 
-# -- (string) Name of an existing Secret holding TLS certs to serve the registry over HTTPS.
+# -- (string) Name of an existing Secret holding TLS certs to serve the registry
+# over HTTPS. Takes precedence over `tls` below. Leave unset to either run plain
+# HTTP or have the chart create the Secret from `tls.crt`/`tls.key`.
 # tlsSecretName: registry.docker.example.com
+
+# -- (object) Inline TLS material. When `tls.crt` and `tls.key` are both set
+# (and `tlsSecretName` is unset), the chart creates a `<fullname>-tls` Secret and
+# serves HTTPS from it. Keys: crt, key (PEM strings).
+tls: {}
+#   crt: |
+#     -----BEGIN CERTIFICATE-----
+#     ...
+#   key: |
+#     -----BEGIN PRIVATE KEY-----
+#     ...
 
 # -- Use an existing Secret instead of creating one. The Secret must contain the
 # keys required by your auth/storage/proxy configuration (haSharedSecret,
@@ -229,6 +242,18 @@ proxy:
   # -- Upstream password.
   password: ""
   # -- Reference to an external Secret holding proxyUsername/proxyPassword.
+  secretRef: ""
+
+# Redis blob descriptor cache credentials. To enable the cache, also set
+# `configData.storage.cache.blobdescriptor: redis` and a `configData.redis`
+# connection block (addr, db, timeouts, pool). Only the password is handled here
+# so it stays out of the ConfigMap; it is injected as REGISTRY_REDIS_PASSWORD.
+redis:
+  # -- Redis password. Stored in the chart Secret (or `secretRef`) and injected
+  # as `REGISTRY_REDIS_PASSWORD`. Leave empty for password-less Redis.
+  password: ""
+  # -- Reference to an external Secret with a `redisPassword` key, instead of
+  # storing `password` in the chart Secret.
   secretRef: ""
 
 metrics:
