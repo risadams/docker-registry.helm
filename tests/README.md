@@ -7,7 +7,7 @@ locally and in CI.
 |-------|--------|:----------------:|----------------|
 | 0. Docs       | `tests/docs.sh`        | No  | README is in sync with `values.yaml` (regenerates via **helm-docs** and fails on drift), and `values.schema.json` is valid, accepts every scenario, and rejects known-bad input. |
 | 1. Static     | `tests/static.sh`      | No  | `helm lint --strict`, renders every scenario, validates each against the Kubernetes 1.34.1 JSON schemas with **kubeconform**, and runs structural invariants (selector ⊆ pod labels, recommended labels, names present). |
-| 2. Unit       | `tests/unit.sh`        | No  | **helm-unittest** template assertions — 123 tests across 16 suites, covering 100% of top-level `values.yaml` keys. Prints a coverage report. |
+| 2. Unit       | `tests/unit.sh`        | No  | **helm-unittest** template assertions — 137 tests across 17 suites, covering 100% of top-level `values.yaml` keys. Prints a coverage report. |
 | 3. Integration| `tests/integration.sh` | Yes | Installs the chart on the active kube context, runs `helm test`, performs scenario-specific functional probes (incl. real `docker push`/`pull` through htpasswd auth), then tears everything down. |
 | 4. `helm test`| `templates/tests/test-connection.yaml` | Yes | Ships **inside the chart**. `helm test <release>` probes the `/v2/` API using the registry image. Available to end users, not just this suite. |
 

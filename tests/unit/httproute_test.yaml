@@ -78,3 +78,38 @@ tests:
       - equal:
           path: spec.rules[0].matches[0].path.value
           value: /
+
+  - it: applies filters on the default rule
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: gw
+        filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              add:
+                - name: X-Test
+                  value: "1"
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+
+  - it: prepends additionalRules before the default rule
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: gw
+        additionalRules:
+          - backendRefs:
+              - name: other-svc
+                port: 8080
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: other-svc
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: registry

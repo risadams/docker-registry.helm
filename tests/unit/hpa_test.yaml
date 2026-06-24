@@ -48,6 +48,55 @@ tests:
           path: spec.maxReplicas
           value: 9
 
+  - it: emits CPU, memory, and behavior when configured (autoscaling/v2)
+    template: templates/hpa.yaml
+    set:
+      autoscaling:
+        enabled: true
+        targetCPUUtilizationPercentage: 75
+        targetMemoryUtilizationPercentage: 80
+        behavior:
+          scaleDown:
+            stabilizationWindowSeconds: 300
+    capabilities:
+      apiVersions:
+        - autoscaling/v2
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 75
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 80
+      - equal:
+          path: spec.behavior.scaleDown.stabilizationWindowSeconds
+          value: 300
+
+  - it: omits memory and behavior when not set (autoscaling/v2)
+    template: templates/hpa.yaml
+    set:
+      autoscaling:
+        enabled: true
+        targetMemoryUtilizationPercentage: null
+    capabilities:
+      apiVersions:
+        - autoscaling/v2
+    asserts:
+      - isNull:
+          path: spec.behavior
+
   - it: falls back to autoscaling/v1 when v2 is unavailable
     template: templates/hpaV1.yaml
     set:
