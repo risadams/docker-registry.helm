@@ -1,3 +1,21 @@
 apiVersion: v1
-entries: {}
-generated: "1970-01-01T00:00:00Z"
+entries:
+  docker-registry:
+  - apiVersion: v1
+    appVersion: 3.0.0
+    created: "2026-06-24T13:55:11.320434846Z"
+    description: A Helm chart for Docker Registry
+    digest: 012c74889960d9df51c84918f3ba0889bc273048b610ea48e8b03e27c104afea
+    home: https://hub.docker.com/_/registry/
+    icon: https://helm.twun.io/docker-registry.png
+    maintainers:
+    - name: Ris Adams
+      url: https://github.com/risadams
+    name: docker-registry
+    sources:
+    - https://github.com/risadams/docker-registry.helm
+    - https://github.com/docker/distribution-library-image
+    urls:
+    - docker-registry-4.0.0.tgz
+    version: 4.0.0
+generated: "2026-06-24T13:55:11.320445376Z"
