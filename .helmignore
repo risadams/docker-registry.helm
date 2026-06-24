@@ -19,3 +19,10 @@
 .project
 .idea/
 *.tmproj
+.vscode/
+# Test suite and developer tooling (NOT shipped in the chart package).
+# Anchored with a leading slash so this matches the repo-root tests/ dir only —
+# templates/tests/ (the in-chart `helm test` hook) is intentionally kept.
+/tests/
+/Makefile
+
