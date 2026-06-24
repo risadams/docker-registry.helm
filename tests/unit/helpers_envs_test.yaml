@@ -1,0 +1,141 @@
+suite: helpers-and-envs
+# Exercises _helpers.tpl indirectly through the templates that consume it:
+# secret-name resolution, storage env vars, proxy, htpasswd auth, tls.
+templates:
+  - templates/deployment.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+tests:
+  - it: always sets REGISTRY_HTTP_SECRET from the chart secret
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_HTTP_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: haSharedSecret
+
+  - it: references the existing secret name when existingSecret is set
+    template: templates/deployment.yaml
+    set:
+      existingSecret: external-creds
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_HTTP_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: external-creds
+                key: haSharedSecret
+
+  - it: enables htpasswd auth env when an htpasswd is supplied
+    template: templates/deployment.yaml
+    set:
+      secrets:
+        htpasswd: "user:hash"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_AUTH
+            value: htpasswd
+
+  - it: sets the filesystem root directory for filesystem storage
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+            value: /var/lib/registry
+
+  - it: sets S3 region and bucket for s3 storage
+    template: templates/deployment.yaml
+    set:
+      storage: s3
+      s3:
+        region: us-east-1
+        bucket: my-bucket
+      secrets:
+        s3:
+          accessKey: ak
+          secretKey: sk
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_REGION
+            value: us-east-1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_BUCKET
+            value: my-bucket
+
+  - it: configures proxy remote url when proxy is enabled
+    template: templates/deployment.yaml
+    set:
+      proxy:
+        enabled: true
+        remoteurl: https://registry-1.docker.io
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_PROXY_REMOTEURL
+            value: https://registry-1.docker.io
+
+  - it: adds extra env vars
+    template: templates/deployment.yaml
+    set:
+      extraEnvVars:
+        - name: CUSTOM
+          value: yes-please
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CUSTOM
+            value: yes-please
+
+  - it: mounts tls cert volume and env when tlsSecretName is set
+    template: templates/deployment.yaml
+    set:
+      tlsSecretName: reg-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /etc/ssl/docker/tls.crt
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-cert
+            secret:
+              secretName: reg-tls
+
+  - it: mounts extra volumes and volume mounts
+    template: templates/deployment.yaml
+    set:
+      extraVolumes:
+        - name: extra
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: extra
+          mountPath: /extra
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: extra
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: extra
+            mountPath: /extra

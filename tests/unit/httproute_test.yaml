@@ -1,0 +1,80 @@
+suite: httproute
+templates:
+  - templates/httproute.yaml
+tests:
+  - it: is absent by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders an HTTPRoute when enabled
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: my-gateway
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: spec.parentRefs[0].name
+          value: my-gateway
+
+  - it: allows overriding the apiVersion
+    set:
+      httproute:
+        enabled: true
+        apiVersion: gateway.networking.k8s.io/v1beta1
+        parentRefs:
+          - name: gw
+    asserts:
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1beta1
+
+  - it: defaults the backend to the service name and port
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: gw
+      service:
+        name: registry
+        port: 5000
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: registry
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 5000
+
+  - it: templates hostnames
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: gw
+        hostnames:
+          - reg.example.com
+    asserts:
+      - equal:
+          path: spec.hostnames[0]
+          value: reg.example.com
+
+  - it: applies the default PathPrefix match
+    set:
+      httproute:
+        enabled: true
+        parentRefs:
+          - name: gw
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: PathPrefix
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /

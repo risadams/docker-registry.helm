@@ -1,0 +1,12 @@
+# Scenario: garbage-collect CronJob enabled.
+# Functional goal: the CronJob exists, a manually-triggered Job from it runs to
+# completion, and the ConfigMap has blobdescriptor caching disabled (the chart
+# forces this when GC is on, since cache + GC corrupts the registry).
+persistence:
+  enabled: true
+  size: 1Gi
+garbageCollect:
+  enabled: true
+  deleteUntagged: true
+  schedule: "0 1 * * *"
+  restartPolicy: OnFailure

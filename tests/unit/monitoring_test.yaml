@@ -1,0 +1,110 @@
+suite: monitoring
+templates:
+  - templates/servicemonitor.yaml
+  - templates/podmonitor.yaml
+  - templates/prometheusrules.yaml
+tests:
+  - it: ServiceMonitor is absent unless metrics + serviceMonitor are enabled
+    template: templates/servicemonitor.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a ServiceMonitor when enabled
+    template: templates/servicemonitor.yaml
+    set:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: spec.endpoints[0].port
+          value: http-metrics
+
+  - it: defaults the ServiceMonitor namespace to the release namespace
+    template: templates/servicemonitor.yaml
+    set:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+
+  - it: honors an explicit ServiceMonitor namespace
+    template: templates/servicemonitor.yaml
+    set:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+
+  - it: merges the kube-prometheus-stack release label exactly once
+    template: templates/servicemonitor.yaml
+    set:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          labels:
+            release: kube-prometheus-stack
+    asserts:
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+
+  - it: PodMonitor is absent unless metrics + podMonitor are enabled
+    template: templates/podmonitor.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PodMonitor when enabled
+    template: templates/podmonitor.yaml
+    set:
+      metrics:
+        enabled: true
+        podMonitor:
+          enabled: true
+    asserts:
+      - isKind:
+          of: PodMonitor
+      - equal:
+          path: spec.podMetricsEndpoints[0].port
+          value: http-metrics
+
+  - it: PrometheusRule is absent unless metrics + prometheusRule are enabled
+    template: templates/prometheusrules.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PrometheusRule with rules when enabled
+    template: templates/prometheusrules.yaml
+    set:
+      metrics:
+        enabled: true
+        prometheusRule:
+          enabled: true
+          rules:
+            - alert: RegistryDown
+              expr: up == 0
+    asserts:
+      - isKind:
+          of: PrometheusRule
+      - equal:
+          path: spec.groups[0].rules[0].alert
+          value: RegistryDown
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: controller

@@ -1,0 +1,4 @@
+# Scenario: default install (chart defaults, no persistence, ClusterIP).
+# Functional goal: registry comes up and the v2 API answers.
+# (Intentionally empty — exercises the out-of-the-box defaults.)
+{}

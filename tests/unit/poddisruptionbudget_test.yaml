@@ -1,0 +1,39 @@
+suite: poddisruptionbudget
+templates:
+  - templates/poddisruptionbudget.yaml
+tests:
+  - it: is absent by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PDB when configured
+    set:
+      podDisruptionBudget:
+        minAvailable: 1
+    capabilities:
+      apiVersions:
+        - policy/v1
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: apiVersion
+          value: policy/v1
+      - equal:
+          path: spec.minAvailable
+          value: 1
+
+  - it: uses the stable selector labels
+    set:
+      podDisruptionBudget:
+        maxUnavailable: 1
+    capabilities:
+      apiVersions:
+        - policy/v1
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app: docker-registry
+            release: RELEASE-NAME

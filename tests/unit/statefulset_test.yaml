@@ -1,0 +1,82 @@
+suite: statefulset
+templates:
+  - templates/statefulset.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+tests:
+  - it: is absent by default (Deployment mode)
+    template: templates/statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a StatefulSet when useStatefulSet is true
+    template: templates/statefulset.yaml
+    set:
+      useStatefulSet: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-docker-registry
+
+  - it: uses updateStrategy (not strategy) and a valid serviceName
+    template: templates/statefulset.yaml
+    set:
+      useStatefulSet: true
+      updateStrategy:
+        type: RollingUpdate
+    asserts:
+      - equal:
+          path: spec.updateStrategy.type
+          value: RollingUpdate
+      - isNull:
+          path: spec.strategy
+      - equal:
+          path: spec.serviceName
+          value: RELEASE-NAME-docker-registry
+
+  - it: omits volumeClaimTemplates when persistence is disabled
+    template: templates/statefulset.yaml
+    set:
+      useStatefulSet: true
+      persistence:
+        enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+  - it: emits a volumeClaimTemplate named data when persistence is enabled
+    template: templates/statefulset.yaml
+    set:
+      useStatefulSet: true
+      persistence:
+        enabled: true
+        size: 2Gi
+        storageClass: fast
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: data
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 2Gi
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: fast
+
+  - it: supports extra containers and the registry container
+    template: templates/statefulset.yaml
+    set:
+      useStatefulSet: true
+      extraContainers:
+        - name: sidecar
+          image: busybox:1.36
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: docker-registry

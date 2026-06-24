@@ -5,10 +5,7 @@ metadata:
   name: {{ .Values.service.name | default (include "docker-registry.fullname" .) }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    {{- include "docker-registry.labels" . | nindent 4 }}
-{{- if .Values.service.labels }}
-{{ toYaml .Values.service.labels | indent 4 }}
-{{- end }}
+    {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" .Values.service.labels) | nindent 4 }}
 {{- if .Values.service.annotations }}
   annotations:
 {{ toYaml .Values.service.annotations | indent 4 }}

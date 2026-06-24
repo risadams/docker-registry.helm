@@ -1,0 +1,13 @@
+# Scenario: Ingress enabled.
+# Functional goal: an Ingress object is created with the correct backend
+# Service name and port. (No ingress controller is required to validate the
+# object is created and well-formed.)
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - registry.test.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  labels:
+    test.docker-registry/scenario: ingress

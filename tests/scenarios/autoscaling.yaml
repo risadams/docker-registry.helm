@@ -1,0 +1,10 @@
+# Scenario: HorizontalPodAutoscaler enabled.
+# Functional goal: an HPA object is created targeting the registry Deployment.
+# NOTE: live scaling needs metrics-server; the harness asserts the HPA object
+# exists and targets the right Deployment, and logs a skip for live scaling if
+# metrics-server is absent.
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70

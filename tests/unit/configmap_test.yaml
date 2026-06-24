@@ -1,0 +1,35 @@
+suite: configmap
+templates:
+  - templates/configmap.yaml
+tests:
+  - it: renders the registry config
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-docker-registry-config
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "addr: :5000"
+
+  - it: keeps blob cache as inmemory when GC is disabled
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "blobdescriptor: inmemory"
+
+  - it: disables the blob descriptor cache when garbage collection is enabled
+    set:
+      garbageCollect:
+        enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "blobdescriptor: disabled"
+
+  - it: carries the recommended labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: docker-registry

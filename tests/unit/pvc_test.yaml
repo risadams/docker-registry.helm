@@ -1,0 +1,93 @@
+suite: pvc
+templates:
+  - templates/pvc.yaml
+tests:
+  - it: is absent when persistence is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: is absent when an existingClaim is provided
+    set:
+      persistence:
+        enabled: true
+        existingClaim: my-claim
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: is absent in StatefulSet mode (volumeClaimTemplates handles it)
+    set:
+      persistence:
+        enabled: true
+      useStatefulSet: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PVC with the requested size and access mode
+    set:
+      persistence:
+        enabled: true
+        size: 7Gi
+        accessMode: ReadWriteMany
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: spec.resources.requests.storage
+          value: 7Gi
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteMany
+
+  - it: adds the keep resource-policy annotation when persistence.keep is true
+    set:
+      persistence:
+        enabled: true
+        keep: true
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: omits the keep annotation when persistence.keep is false
+    set:
+      persistence:
+        enabled: true
+        keep: false
+    asserts:
+      - isNull:
+          path: metadata.annotations["helm.sh/resource-policy"]
+
+  - it: merges custom persistence annotations
+    set:
+      persistence:
+        enabled: true
+        keep: false
+        annotations:
+          backup: "true"
+    asserts:
+      - equal:
+          path: metadata.annotations.backup
+          value: "true"
+
+  - it: sets volumeName when provided
+    set:
+      persistence:
+        enabled: true
+        volumeName: pv-123
+    asserts:
+      - equal:
+          path: spec.volumeName
+          value: pv-123
+
+  - it: sets an empty storageClassName when storageClass is "-"
+    set:
+      persistence:
+        enabled: true
+        storageClass: "-"
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: ""

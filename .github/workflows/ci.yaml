@@ -13,29 +13,98 @@ concurrency:
   group: ${{ github.event_name }}-${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 permissions: read-all
+
+env:
+  # helm-unittest's plugin.yaml uses the `platformHooks` field, which requires
+  # helm >= 3.17; older helm fails the plugin install with an unmarshal error.
+  HELM_VERSION: v3.18.4
+  KUBECONFORM_VERSION: v0.8.0
+  # Schema validation pins the exact patch used locally (docker-desktop 1.34.1).
+  K8S_VERSION: "1.34.1"
+  # kind only publishes node images for specific patches; v1.34.0 is the nearest
+  # 1.34 image to the local docker-desktop cluster.
+  KIND_NODE_IMAGE: kindest/node:v1.34.0
+
 jobs:
+  # ----- Fast, deterministic, REQUIRED (no cluster) --------------------------
   helm-lint:
     name: Helm Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          helm lint --strict
-  integration-test:
-    name: Integration Test
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - run: helm lint --strict .
+
+  static:
+    name: Static (render + kubeconform + invariants)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: AbsaOSS/k3d-action@v2.4.0
-        name: Create K3D Cluster with Container Registry
+      - uses: azure/setup-helm@v4
         with:
-          cluster-name: local-ci-k3d-cluster
-          args: >-
-            --agents 1
-            --registry-create local-ci-k3d-registry
-      - name: Test
+          version: ${{ env.HELM_VERSION }}
+      - name: Install kubeconform
         run: |
-          helm install docker-registry . --wait --wait-for-jobs
-          kubectl get all,pvc
+          curl -fsSL -o /tmp/kc.tgz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          tar -C /usr/local/bin -xzf /tmp/kc.tgz kubeconform
+          kubeconform -v
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Run static layer
+        run: bash tests/static.sh
+
+  unit:
+    name: Unit (helm-unittest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run unit layer
+        run: bash tests/unit.sh
+
+  # ----- Cluster integration: NON-GATING by default -------------------------
+  # Spins up a real (kind) cluster and runs the full functional suite. Marked
+  # continue-on-error so a flaky ephemeral cluster never blocks a merge while the
+  # result stays visible on the PR. To make it REQUIRED, delete the
+  # `continue-on-error: true` line below.
+  integration:
+    name: Integration (kind)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          node_image: ${{ env.KIND_NODE_IMAGE }}
+          cluster_name: dr-ci
+      - name: Cluster info
+        run: kubectl get nodes -o wide
+      - name: Run integration layer
+        # kind's containerd is not the Actions docker daemon, so the host-side
+        # docker push/pull depth is skipped; object + helm test + /v2 probes run.
+        # INSTALL_CRDS=1 pulls the prometheus-operator CRDs for the metrics scenario.
+        env:
+          SKIP_DOCKER: "1"
+          INSTALL_CRDS: "1"
+          TIMEOUT: "240s"
+        run: bash tests/integration.sh
