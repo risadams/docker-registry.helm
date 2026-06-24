@@ -15,7 +15,9 @@ concurrency:
 permissions: read-all
 
 env:
-  HELM_VERSION: v3.16.3
+  # helm-unittest's plugin.yaml uses the `platformHooks` field, which requires
+  # helm >= 3.17; older helm fails the plugin install with an unmarshal error.
+  HELM_VERSION: v3.18.4
   KUBECONFORM_VERSION: v0.8.0
   # Schema validation pins the exact patch used locally (docker-desktop 1.34.1).
   K8S_VERSION: "1.34.1"
