@@ -31,7 +31,9 @@ jobs:
 
       - name: Run chart-releaser
         env:
-          CR_TOKEN: "${{ secrets.CR_TOKEN }}"
+          # Same-repo publishing only needs the built-in token (a CR_TOKEN PAT is
+          # required solely for cross-repo releases). contents:write is granted above.
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         run: |
           owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
           repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
