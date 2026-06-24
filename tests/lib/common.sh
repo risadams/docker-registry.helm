@@ -75,6 +75,17 @@ svc_name() {
     -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
 }
 
+# The chart's pods carry only the stable selector labels (app + release), not the
+# recommended app.kubernetes.io/* set. Select pods on those.
+# pod_selector <release> -> a -l selector string
+pod_selector() { echo "release=$1"; }
+
+# pod_ready <release> <namespace> -> "True"/"False"/"" for the first pod
+pod_ready() {
+  kubectl get pods -n "$2" -l "$(pod_selector "$1")" \
+    -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null
+}
+
 # wait_rollout <kind/name> <namespace> <timeout>
 wait_rollout() {
   kubectl rollout status "$1" -n "$2" --timeout="${3:-120s}"
