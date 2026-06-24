@@ -36,7 +36,7 @@ jobs:
             --set secrets.s3.accessKey=def
             --set s3.region=us-42
             --set s3.bucket=abc
-            --set s3.encrypt=abc
+            --set s3.encrypt=true
           )
           helm template --debug ${OPTIONS[@]} --output-dir before ${{ github.server_url }}/${{ github.repository }}/archive/refs/heads/${{ github.base_ref }}.tar.gz
           helm template --debug ${OPTIONS[@]} --output-dir after .
