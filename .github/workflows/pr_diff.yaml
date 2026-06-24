@@ -1,7 +1,7 @@
 name: PR Diff for Helm chart
 
 on:
-  pull_request_target:
+  pull_request:
 
 permissions:
   pull-requests: write
@@ -10,8 +10,8 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: azure/setup-helm@v3
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
       - name: Run diff
         id: diff
         run: |
@@ -38,21 +38,21 @@ jobs:
             --set s3.bucket=abc
             --set s3.encrypt=abc
           )
-          helm template --debug ${OPTIONS[@]} --output-dir before https://github.com/twuni/docker-registry.helm/archive/refs/heads/main.tar.gz
+          helm template --debug ${OPTIONS[@]} --output-dir before ${{ github.server_url }}/${{ github.repository }}/archive/refs/heads/${{ github.base_ref }}.tar.gz
           helm template --debug ${OPTIONS[@]} --output-dir after .
           # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
           echo 'HELM_DIFF<<EOF' >> $GITHUB_ENV
           echo "$(diff -ur before after)" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
-      - uses: marocchino/sticky-pull-request-comment@d2ad0de260ae8b0235ce059e63f2949ba9e05943
+      - uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405
         with:
           message: |
-            Running a `helm template` smoketest on commit ${{ github.ref }} results in the following diff against `${{ github.base_ref }}`:
-            
+            Running a `helm template` smoketest on commit ${{ github.sha }} results in the following diff against `${{ github.base_ref }}`:
+
             <details><summary>diff</summary><p>
-            
+
             ```diff
             ${{ env.HELM_DIFF }}
             ```
-            
+
             </p></details>
