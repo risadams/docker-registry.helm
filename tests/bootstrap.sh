@@ -99,6 +99,25 @@ else
   log "kubeconform: $(kubeconform -v)"
 fi
 
+# --- helm-docs ---------------------------------------------------------------
+HELM_DOCS_VERSION="${HELM_DOCS_VERSION:-v1.14.2}"
+if have helm-docs; then
+  log "helm-docs: $(helm-docs --version 2>&1)"
+else
+  log "installing helm-docs $HELM_DOCS_VERSION -> $BIN_DIR"
+  # helm-docs assets use capitalized OS and x86_64/arm64 naming.
+  case "$OS" in linux) HD_OS=Linux;; darwin) HD_OS=Darwin;; windows) HD_OS=Windows;; *) HD_OS=Linux;; esac
+  case "$ARCH" in amd64) HD_ARCH=x86_64;; arm64) HD_ARCH=arm64;; *) HD_ARCH=x86_64;; esac
+  ver_no_v="${HELM_DOCS_VERSION#v}"
+  tmp="$(mktemp -d)"
+  curl -fsSL -m 120 -o "$tmp/hd.tgz" \
+    "https://github.com/norwoodj/helm-docs/releases/download/${HELM_DOCS_VERSION}/helm-docs_${ver_no_v}_${HD_OS}_${HD_ARCH}.tar.gz"
+  ( cd "$tmp" && tar xzf hd.tgz helm-docs${EXE} )
+  cp "$tmp/helm-docs${EXE}" "$BIN_DIR/helm-docs${EXE}"
+  rm -rf "$tmp"; hash -r 2>/dev/null || true
+  log "helm-docs: $(helm-docs --version 2>&1)"
+fi
+
 # --- kind (optional) ---------------------------------------------------------
 if [ "${SKIP_KIND:-0}" != "1" ]; then
   if have kind; then

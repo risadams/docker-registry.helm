@@ -75,6 +75,58 @@ tests:
           content:
             name: REGISTRY_STORAGE_S3_BUCKET
             value: my-bucket
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: s3AccessKey
+
+  # upstream #71: S3 via an IAM instance profile / IRSA (no secrets.s3) must
+  # render without a nil-pointer and must NOT inject static-credential env vars.
+  - it: omits S3 credential env vars when no secrets.s3 is set
+    template: templates/deployment.yaml
+    set:
+      storage: s3
+      s3:
+        region: us-east-1
+        bucket: my-bucket
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_REGION
+            value: us-east-1
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: s3AccessKey
+
+  - it: uses an external s3 secretRef when provided
+    template: templates/deployment.yaml
+    set:
+      storage: s3
+      s3:
+        region: us-east-1
+        bucket: my-bucket
+      secrets:
+        s3:
+          secretRef: my-external-s3
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_STORAGE_S3_ACCESSKEY
+            valueFrom:
+              secretKeyRef:
+                name: my-external-s3
+                key: s3AccessKey
 
   - it: configures proxy remote url when proxy is enabled
     template: templates/deployment.yaml
@@ -101,6 +153,70 @@ tests:
           content:
             name: CUSTOM
             value: yes-please
+
+  # upstream #95: redis blob cache password is injected from the Secret, never
+  # placed in the ConfigMap.
+  - it: injects REGISTRY_REDIS_PASSWORD from the chart secret
+    template: templates/deployment.yaml
+    set:
+      redis:
+        password: s3cr3t
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-docker-registry-secret
+                key: redisPassword
+
+  - it: sources the redis password from an external secretRef when set
+    template: templates/deployment.yaml
+    set:
+      redis:
+        password: s3cr3t
+        secretRef: external-redis
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: external-redis
+                key: redisPassword
+
+  - it: omits the redis password env when no password is set
+    template: templates/deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_REDIS_PASSWORD
+
+  # upstream #112: inline tls.crt/tls.key serve HTTPS from a chart-created Secret.
+  - it: serves HTTPS from inline tls material
+    template: templates/deployment.yaml
+    set:
+      tls:
+        crt: CERTDATA
+        key: KEYDATA
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /etc/ssl/docker/tls.crt
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-cert
+            secret:
+              secretName: RELEASE-NAME-docker-registry-tls
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
 
   - it: mounts tls cert volume and env when tlsSecretName is set
     template: templates/deployment.yaml

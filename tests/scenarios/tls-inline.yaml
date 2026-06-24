@@ -1,0 +1,14 @@
+# Scenario: in-chart TLS from inline cert/key (upstream #112).
+# RENDER/SCHEMA/UNIT ONLY — not in integration.sh's scenario list. The PEM below
+# is a non-functional placeholder, so a live registry would reject it; this
+# fixture exists to validate that the chart creates the kubernetes.io/tls Secret
+# and wires HTTPS (asserted by tests/unit/tls_secret_test.yaml and helpers).
+tls:
+  crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIBdummycertdata
+    -----END CERTIFICATE-----
+  key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIBdummykeydata
+    -----END PRIVATE KEY-----

@@ -108,3 +108,21 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: controller
+
+  # upstream #150: enabling prometheusRule with no rules previously produced an
+  # empty `spec:` that the API rejects. A valid empty groups list must render.
+  - it: renders a valid empty spec when prometheusRule is enabled without rules
+    template: templates/prometheusrules.yaml
+    set:
+      metrics:
+        enabled: true
+        prometheusRule:
+          enabled: true
+    asserts:
+      - isKind:
+          of: PrometheusRule
+      - equal:
+          path: spec.groups
+          value: []
+      - isNotNull:
+          path: spec

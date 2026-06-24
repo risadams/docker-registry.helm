@@ -11,5 +11,12 @@ spec:
   groups:
   - name: {{ template "docker-registry.fullname" . }}
     rules: {{- toYaml .Values.metrics.prometheusRule.rules | nindent 4 }}
+{{- else }}
+  {{- /*
+    PrometheusRule requires a non-empty spec; an empty `spec:` is rejected by the
+    API ("spec: Required value"). Emit a valid empty groups list when no rules are
+    configured so enabling prometheusRule without rules still applies cleanly.
+  */}}
+  groups: []
 {{- end }}
 {{- end }}

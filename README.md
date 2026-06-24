@@ -7,6 +7,8 @@ This directory contains a Kubernetes chart to deploy a private Docker Registry.
 > It incorporates the actionable community pull requests and fixes that were left
 > open upstream. See the [Changelog](#changelog) for what changed.
 
+![Version: 4.0.1](https://img.shields.io/badge/Version-4.0.1-informational?style=flat-square) ![AppVersion: 3.0.0](https://img.shields.io/badge/AppVersion-3.0.0-informational?style=flat-square)
+
 ## Prerequisites Details
 
 * PV support on underlying infrastructure (if persistence is required)
@@ -32,7 +34,7 @@ helm install my-registry docker-registry/docker-registry
 ### Via the OCI registry (GHCR)
 
 ```console
-helm install my-registry oci://ghcr.io/risadams/docker-registry --version 4.0.0
+helm install my-registry oci://ghcr.io/risadams/docker-registry --version 4.0.1
 ```
 
 > The upstream `twuni` repositories (`https://helm.twun.io`, since migrated to
@@ -41,139 +43,139 @@ helm install my-registry oci://ghcr.io/risadams/docker-registry --version 4.0.0
 
 ## Configuration
 
-The following table lists the configurable parameters of the docker-registry chart and
-their default values.
+The following tables list the configurable parameters of the chart and their
+default values. Values are validated against `values.schema.json` at install
+time. This section is generated from `values.yaml` by
+[helm-docs](https://github.com/norwoodj/helm-docs) — edit the annotations there,
+not this table.
 
-| Parameter                   | Description                                                                                | Default         |
-|:----------------------------|:-------------------------------------------------------------------------------------------|:----------------|
-| `image.pullPolicy`          | Container pull policy                                                                      | `IfNotPresent`  |
-| `image.repository`          | Container image to use                                                                     | `registry`      |
-| `image.tag`                 | Container image tag to deploy                                                              | `3.0.0`         |
-| `imagePullSecrets`          | Specify image pull secrets                                                                 | `nil` (does not add image pull secrets to deployed pods) |
-| `persistence.accessMode`    | Access mode to use for PVC                                                                 | `ReadWriteOnce` |
-| `persistence.enabled`       | Whether to use a PVC for the Docker storage                                                | `false`         |
-| `persistence.deleteEnabled` | Enable the deletion of image blobs and manifests by digest                                 | `nil`           |
-| `persistence.size`          | Amount of space to claim for PVC                                                           | `10Gi`          |
-| `persistence.storageClass`  | Storage Class to use for PVC                                                               | `-`             |
-| `persistence.existingClaim` | Name of an existing PVC to use for config                                                  | `nil`           |
-| `persistence.keep`          | Keep the PVC on `helm uninstall` (adds `helm.sh/resource-policy: keep`)                    | `true`          |
-| `persistence.volumeName`    | Bind the PVC to a specific PersistentVolume by name                                        | `nil`           |
-| `persistence.annotations`   | Annotations to add to the PVC                                                              | `{}`            |
-| `useStatefulSet`            | Deploy as a StatefulSet (with `volumeClaimTemplates`) instead of a Deployment             | `false`         |
-| `emptydir.size`             | `sizeLimit` for the emptyDir used when persistence is disabled (`0` = unlimited)           | `"0"`           |
-| `serviceAccount.create`     | Create ServiceAccount                                                                      | `false`         |
-| `serviceAccount.name`       | ServiceAccount name                                                                        | `nil`           |
-| `serviceAccount.annotations` | Annotations to add to the ServiceAccount                                                  | `{}`            |
-| `serviceAccount.automountServiceAccountToken` | Mount the SA token into the ServiceAccount                               | `false`         |
-| `automountServiceAccountToken` | Mount the ServiceAccount API token into the pod                                         | `false`         |
-| `deployment.annotations`    | Annotations to add to the Deployment                                                       | `{}`            |
-| `deployment.labels`         | Labels to add to the Deployment                                                            | `{}`            |
-| `enableServiceLinks`        | Whether to enable service links in the pod                                                 | `true`          |
-| `service.create`            | Whether to create the Service resource                                                     | `true`          |
-| `service.name`              | Name of the Service (also used by Ingress/HTTPRoute backends)                              | `registry`      |
-| `service.port`              | TCP port on which the service is exposed                                                   | `5000`          |
-| `service.type`              | service type                                                                               | `ClusterIP`     |
-| `service.clusterIP`         | if `service.type` is `ClusterIP` and this is non-empty, sets the cluster IP of the service | `nil`           |
-| `service.nodePort`          | if `service.type` is `NodePort` and this is non-empty, sets the node port of the service   | `nil`           |
-| `service.loadBalancerIP`     | if `service.type` is `LoadBalancer` and this is non-empty, sets the loadBalancerIP of the service | `nil`          |
-| `service.loadBalancerSourceRanges`| if `service.type` is `LoadBalancer` and this is non-empty, sets the loadBalancerSourceRanges of the service | `nil`           |
-| `service.sessionAffinity`       | service session affinity                                                               | `nil`           |
-| `service.sessionAffinityConfig` | service session affinity config                                                        | `nil`           |
-| `service.ipFamilies`        | IP families for the service (e.g. `[IPv4, IPv6]`)                                          | `[]`            |
-| `service.ipFamilyPolicy`    | IP family policy for the service (e.g. `PreferDualStack`)                                  | `nil`           |
-| `replicaCount`              | k8s replicas                                                                               | `1`             |
-| `updateStrategy`            | update strategy for deployment                                                             | `{}`            |
-| `podAnnotations`            | Annotations for deployment pod, and `garbageCollect` pod unless set explicitly there. See `garbageCollect` | `{}` |
-| `podLabels`                 | Labels for deployment pod, and `garbageCollect` pod unless set explicitly there. See `garbageCollect` | `{}` |
-| `podDisruptionBudget`       | Pod disruption budget                                                                      | `{}`            |
-| `resources.limits.cpu`      | Container requested CPU                                                                    | `nil`           |
-| `resources.limits.memory`   | Container requested memory                                                                 | `nil`           |
-| `autoscaling.enabled`       | Enable autoscaling using HorizontalPodAutoscaler                                           | `false`         |
-| `autoscaling.minReplicas`   | Minimal number of replicas                                                                 | `1`             |
-| `autoscaling.maxReplicas`   | Maximal number of replicas                                                                 | `2`             |
-| `autoscaling.targetCPUUtilizationPercentage` | Target average utilization of CPU on Pods                                 | `60`            |
-| `autoscaling.targetMemoryUtilizationPercentage` | (Kubernetes ≥1.23) Target average utilization of Memory on Pods        | `60`            |
-| `autoscaling.behavior`      | (Kubernetes ≥1.23) Configurable scaling behavior                                           | `{}`            |
-| `priorityClassName      `   | priorityClassName                                                                          | `""`            |
-| `storage`                   | Storage system to use                                                                      | `filesystem`    |
-| `tlsSecretName`             | Name of secret for TLS certs                                                               | `nil`           |
-| `existingSecret`            | Name of an existing Secret to use instead of creating one                                  | `""`            |
-| `secrets.htpasswd`          | Htpasswd authentication                                                                    | `nil`           |
-| `secrets.s3.accessKey`      | Access Key for S3 configuration                                                            | `nil`           |
-| `secrets.s3.secretKey`      | Secret Key for S3 configuration                                                            | `nil`           |
-| `secrets.s3.secretRef`      | The ref for an external secret containing the s3AccessKey and s3SecretKey keys                 | `""`            |
-| `secrets.swift.username`    | Username for Swift configuration                                                           | `nil`           |
-| `secrets.swift.password`    | Password for Swift configuration                                                           | `nil`           |
-| `secrets.haSharedSecret`    | Shared secret for Registry                                                                 | `nil`           |
-| `configData`                | Configuration hash for docker                                                              | `nil`           |
-| `configPath` | Configuration mount point in docker, `/etc/docker/registry` for registry version 2, `/etc/distribution` for version 3 | `/etc/distribution` |
-| `s3.region`                 | S3 region                                                                                  | `nil`           |
-| `s3.regionEndpoint`         | S3 region endpoint                                                                         | `nil`           |
-| `s3.bucket`                 | S3 bucket name                                                                             | `nil`           |
-| `s3.rootdirectory`          | S3 prefix that is applied to allow you to segment data                                     | `nil`           |
-| `s3.encrypt`                | Store images in encrypted format                                                           | `nil`           |
-| `s3.secure`                 | Use HTTPS                                                                                  | `nil`           |
-| `s3.forcepathstyle`         | Use path-style addressing, needed for some s3 compatible storage (minio)                   | `nil`           |
-| `s3.skipverify`             | Allows connection to s3 storage using TLS with untrusted/self-signed certificate           | `nil`           |
-| `swift.authurl`             | Swift authurl                                                                              | `nil`           |
-| `swift.container`           | Swift container                                                                            | `nil`           |
-| `proxy.enabled`             | If true, registry will function as a proxy/mirror                                          | `false`         |
-| `proxy.remoteurl`           | Remote registry URL to proxy requests to                                                   | `https://registry-1.docker.io`            |
-| `proxy.username`            | Remote registry login username                                                             | `nil`           |
-| `proxy.password`            | Remote registry login password                                                             | `nil`           |
-| `proxy.secretRef`           | The ref for an external secret containing the proxyUsername and proxyPassword keys         | `""`            |
-| `namespace`                 | specify a namespace to install the chart to - defaults to `.Release.Namespace`             | `{{ .Release.Namespace }}` |
-| `nodeSelector`              | node labels for pod assignment                                                             | `{}`            |
-| `affinity`                  | affinity settings                                                                          | `{}`            |
-| `topologySpreadConstraints` | topology spread constraints for the pod                                                    | `{}`            |
-| `tolerations`               | pod tolerations                                                                            | `[]`            |
-| `ingress.enabled`           | If true, Ingress will be created                                                           | `false`         |
-| `ingress.annotations`       | Ingress annotations                                                                        | `{}`            |
-| `ingress.labels`            | Ingress labels                                                                             | `{}`            |
-| `ingress.path`              | Ingress service path                                                                       | `/`             |
-| `ingress.hosts`             | Ingress hostnames                                                                          | `[]`            |
-| `ingress.tls`               | Ingress TLS configuration (YAML)                                                           | `[]`            |
-| `ingress.className`         | Ingress controller class name                                                              | `nginx`         |
-| `httproute.enabled`         | If true, a Gateway API HTTPRoute will be created                                           | `false`         |
-| `httproute.apiVersion`      | HTTPRoute apiVersion (defaults to `gateway.networking.k8s.io/v1` when empty)               | `""`            |
-| `httproute.annotations`     | HTTPRoute annotations                                                                      | `{}`            |
-| `httproute.labels`          | HTTPRoute labels                                                                           | `{}`            |
-| `httproute.parentRefs`      | Gateway(s) this HTTPRoute is attached to                                                   | `[]`            |
-| `httproute.hostnames`       | Hostnames matched against the HTTP Host header (templated)                                 | `[]`            |
-| `httproute.matches`         | Request match conditions                                                                   | `PathPrefix /`  |
-| `httproute.filters`         | Filters applied to requests matching the rule                                              | `[]`            |
-| `httproute.additionalRules` | Additional templated HTTPRoute rules prepended to the default rule                         | `[]`            |
-| `metrics.enabled`           | Enable metrics on Service                                                                  | `false`         |
-| `metrics.port`              | TCP port on which the service metrics is exposed                                           | `5001`          |
-| `metrics.serviceMonitor.annotations` | Prometheus Operator ServiceMonitor annotations                                    | `{}`            |
-| `metrics.serviceMonitor.enabled` | If true, Prometheus Operator ServiceMonitor will be created                           | `false`         |
-| `metrics.serviceMonitor.namespace` | Namespace to install the ServiceMonitor in (defaults to the release namespace)      | `""`            |
-| `metrics.serviceMonitor.labels` | Prometheus Operator ServiceMonitor labels                                              | `{}`            |
-| `metrics.podMonitor.enabled` | If true, a Prometheus Operator PodMonitor will be created (alternative to ServiceMonitor) | `false`         |
-| `metrics.podMonitor.labels` | Prometheus Operator PodMonitor labels                                                      | `{}`            |
-| `metrics.prometheusRule.annotations` | Prometheus Operator PrometheusRule annotations                                    | `{}`            |
-| `metrics.prometheusRule.enable` | If true, Prometheus Operator prometheusRule will be created                            | `false`         |
-| `metrics.prometheusRule.labels` | Prometheus Operator prometheusRule labels                                              | `{}`            |
-| `metrics.prometheusRule.rules` | PrometheusRule defining alerting rules for a Prometheus instance                        | `{}`            |
-| `extraVolumeMounts`         | Additional volumeMounts to the registry container                                          | `[]`            |
-| `extraVolumes`              | Additional volumes to the pod                                                              | `[]`            |
-| `extraEnvVars`              | Additional environment variables to the pod                                                | `[]`            |
-| `livenessProbe`             | Override the default livenessProbe (whole probe spec)                                      | `nil`           |
-| `readinessProbe`            | Override the default readinessProbe (whole probe spec)                                     | `nil`           |
-| `initContainers`            | Init containers to be created in the pod                                                   | `[]`            |
-| `extraContainers`           | Extra (sidecar) containers to add to the Deployment/StatefulSet                            | `[]`            |
-| `garbageCollect.enabled`    | If true, will deploy garbage-collector cronjob                                             | `false`         |
-| `garbageCollect.deleteUntagged` | If true, garbage-collector will delete manifests that are not currently referenced via tag | `true`      |
-| `garbageCollect.schedule`   | CronTab schedule, please use standard crontab format                                       | `0 1 * * *`     |
-| `garbageCollect.restartPolicy` | Restart policy for the garbage-collect CronJob pod                                      | `OnFailure`     |
-| `garbageCollect.affinity`   | Affinity for the garbage-collect CronJob pod (falls back to top-level `affinity`)          | `{}`            |
-| `garbageCollect.extraEnvVars` | Additional environment variables for the garbage-collect CronJob                         | `[]`            |
-| `garbageCollect.podAnnotations` | CronJob pod Annotations. If left empty and chart `podAnnotations` are set, will use those. If both are set, these take precedence for the `garbageCollect` pods. | `{}` |
-| `garbageCollect.podLabels`  | CronJob pod Annotations. If left empty and chart `podLabels` are set, will use those. If both are set, these take precedence for the `garbageCollect` pods. | `{}` |
-| `garbageCollect.resources`  | garbage-collector requested resources                                                      | `{}`            |
+## Values
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| replicaCount | int | `1` | Number of registry replicas to run. Ignored when `autoscaling.enabled` is true. |
+| updateStrategy | object | `{}` | Update strategy for the Deployment (or StatefulSet). Empty uses the Kubernetes default. Example: `{type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}`. |
+| podAnnotations | object | `{}` | Annotations added to the registry pod (and the garbage-collect pod unless overridden under `garbageCollect`). |
+| podLabels | object | `{}` | Labels added to the registry pod (and the garbage-collect pod unless overridden under `garbageCollect`). |
+| automountServiceAccountToken | bool | `false` | Mount the ServiceAccount API token into the pod. Disabled by default for least-privilege; the registry does not talk to the Kubernetes API. |
+| serviceAccount.create | bool | `false` | Create a ServiceAccount for the registry. |
+| serviceAccount.name | string | `""` | Name of the ServiceAccount to use. When empty and `create` is true, the fullname is used. |
+| serviceAccount.annotations | object | `{}` | Annotations to add to the ServiceAccount (e.g. an IRSA role ARN). |
+| serviceAccount.automountServiceAccountToken | bool | `false` | Mount the API token into the ServiceAccount. |
+| image.repository | string | `"registry"` | Container image repository. |
+| image.tag | string | `"3.0.0"` | Container image tag. |
+| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
+| deployment.annotations | object | `{}` | Annotations to add to the Deployment/StatefulSet object. |
+| deployment.labels | object | `{}` | Labels to add to the Deployment/StatefulSet object. |
+| service.create | bool | `true` | Whether to create the Service resource. Set to false when the Service is managed externally (e.g. by another chart or an Ingress controller). |
+| service.name | string | `"registry"` | Service name. Also used as the Ingress/HTTPRoute backend name. Empty falls back to the fullname. |
+| service.type | string | `"ClusterIP"` | Service type. One of ClusterIP, NodePort, LoadBalancer, ExternalName. |
+| service.port | int | `5000` | TCP port the Service exposes. |
+| service.annotations | object | `{}` | Additional annotations for the Service. |
+| service.labels | object | `{}` | Additional labels for the Service. |
+| ingress.enabled | bool | `false` | Create an Ingress for the registry. |
+| ingress.className | string | `"nginx"` | IngressClass name. |
+| ingress.path | string | `"/"` | Ingress path. |
+| ingress.hosts | list | `["chart-example.local"]` | Ingress hostnames. |
+| ingress.annotations | object | `{}` | Ingress annotations. |
+| ingress.labels | object | `{}` | Additional Ingress labels. |
+| ingress.tls | list | `nil` | Ingress TLS configuration. Secrets must be created in the namespace. |
+| httproute.enabled | bool | `false` | Create a Gateway API HTTPRoute as an alternative to Ingress. Requires the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster. |
+| httproute.apiVersion | string | `""` | HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`. |
+| httproute.annotations | object | `{}` | HTTPRoute annotations. |
+| httproute.labels | object | `{}` | HTTPRoute labels. |
+| httproute.parentRefs | list | `[]` | Gateway(s) this HTTPRoute attaches to (`parentRefs`). |
+| httproute.hostnames | list | `[]` | Hostnames matched against the HTTP Host header (templated). |
+| httproute.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | Request match conditions. Defaults to a PathPrefix `/` match. |
+| httproute.filters | list | `[]` | Filters applied to requests matching the rule. |
+| httproute.additionalRules | list | `[]` | Additional templated HTTPRoute rules prepended to the default rule. |
+| resources | object | `{}` | Resource requests/limits for the registry container. Left empty by default so the chart runs on small clusters; set explicitly for production. |
+| persistence.accessMode | string | `"ReadWriteOnce"` | Access mode for the PVC. |
+| persistence.enabled | bool | `false` | Use a PersistentVolumeClaim for registry storage (filesystem backend). |
+| persistence.size | string | `"10Gi"` | Size of the PVC. |
+| persistence.keep | bool | `true` | Keep the PVC on `helm uninstall` (adds the `helm.sh/resource-policy: keep` annotation). |
+| persistence.annotations | object | `{}` | Annotations to add to the PVC. |
+| useStatefulSet | bool | `false` | Deploy a StatefulSet (with `volumeClaimTemplates`) instead of a Deployment. Useful when each replica needs its own PersistentVolume. |
+| storage | string | `"filesystem"` | Storage backend. One of: filesystem, s3, azure, swift. |
+| emptydir.size | string | `"0"` | `sizeLimit` for the emptyDir used when persistence is disabled. `"0"` means no limit. |
+| tls | object | `{}` | Inline TLS material. When `tls.crt` and `tls.key` are both set (and `tlsSecretName` is unset), the chart creates a `<fullname>-tls` Secret and serves HTTPS from it. Keys: crt, key (PEM strings). |
+| existingSecret | string | `""` | Use an existing Secret instead of creating one. The Secret must contain the keys required by your auth/storage/proxy configuration (haSharedSecret, htpasswd, azure*/s3*/swift* keys, proxyUsername/proxyPassword). |
+| secrets.haSharedSecret | string | `""` | Shared secret for registry request signing (HA). Generated and kept stable across upgrades when left empty (read back from the existing Secret). |
+| secrets.htpasswd | string | `""` | htpasswd contents to enable basic auth. Generate with `docker run --rm --entrypoint htpasswd httpd:2 -Bbn user pass`. |
+| proxy | object | `{"enabled":false,"password":"","remoteurl":"https://registry-1.docker.io","secretRef":"","username":""}` | Swift backend options (non-secret). Keys: authurl, container. swift:   authurl: http://swift.example.com/   container: my-container Configure the registry as a pull-through cache. See https://docs.docker.com/registry/recipes/mirror/ |
+| proxy.enabled | bool | `false` | Run the registry as a proxy/mirror. |
+| proxy.remoteurl | string | `"https://registry-1.docker.io"` | Upstream registry URL to proxy. |
+| proxy.username | string | `""` | Upstream username. |
+| proxy.password | string | `""` | Upstream password. |
+| proxy.secretRef | string | `""` | Reference to an external Secret holding proxyUsername/proxyPassword. |
+| redis.password | string | `""` | Redis password. Stored in the chart Secret (or `secretRef`) and injected as `REGISTRY_REDIS_PASSWORD`. Leave empty for password-less Redis. |
+| redis.secretRef | string | `""` | Reference to an external Secret with a `redisPassword` key, instead of storing `password` in the chart Secret. |
+| metrics.enabled | bool | `false` | Expose the debug/metrics endpoint and add the metrics port to the Service. |
+| metrics.port | int | `5001` | Metrics (debug) port. |
+| metrics.serviceMonitor.enabled | bool | `false` | Create a prometheus-operator ServiceMonitor. |
+| metrics.serviceMonitor.namespace | string | `""` | Namespace to install the ServiceMonitor in. Empty uses the release namespace. |
+| metrics.serviceMonitor.labels | object | `{}` | Labels for the ServiceMonitor (e.g. `release: kube-prometheus-stack` for discovery). |
+| metrics.podMonitor.enabled | bool | `false` | Create a prometheus-operator PodMonitor as an alternative to the ServiceMonitor. |
+| metrics.podMonitor.labels | object | `{}` | Labels for the PodMonitor. |
+| metrics.prometheusRule.enabled | bool | `false` | Create a prometheus-operator PrometheusRule. |
+| metrics.prometheusRule.labels | object | `{}` | Labels for the PrometheusRule. |
+| metrics.prometheusRule.rules | object | `{}` | Alerting rules. Renders an empty rule group when omitted. |
+| configPath | string | `"/etc/distribution"` | Mount path for the registry config inside the container (`/etc/distribution` for registry v3, `/etc/docker/registry` for v2). |
+| configData | object | `{"health":{"storagedriver":{"enabled":true,"interval":"10s","threshold":3}},"http":{"addr":":5000","debug":{"addr":":5001","prometheus":{"enabled":false,"path":"/metrics"}},"headers":{"X-Content-Type-Options":["nosniff"]}},"log":{"fields":{"service":"registry"}},"storage":{"cache":{"blobdescriptor":"inmemory"}},"version":0.1}` | Registry configuration rendered verbatim into `config.yml`. Any [Distribution config](https://distribution.github.io/distribution/about/configuration/) key can be set here (e.g. `storage.redirect.disable`, `storage.delete.enabled`). |
+| containerSecurityContext.enabled | bool | `true` | Apply the container securityContext. |
+| containerSecurityContext.seLinuxOptions | object | `{}` | SELinux options. |
+| containerSecurityContext.allowPrivilegeEscalation | bool | `false` | Disallow privilege escalation. |
+| containerSecurityContext.capabilities | object | `{"drop":["ALL"]}` | Linux capabilities. |
+| containerSecurityContext.privileged | bool | `false` | Run the container privileged. |
+| containerSecurityContext.readOnlyRootFilesystem | bool | `true` | Mount the root filesystem read-only. |
+| containerSecurityContext.runAsUser | int | `1000` | Run as this UID. |
+| containerSecurityContext.runAsGroup | int | `1000` | Run as this GID. |
+| containerSecurityContext.runAsNonRoot | bool | `true` | Require running as a non-root user. |
+| containerSecurityContext.seccompProfile | object | `{"type":"RuntimeDefault"}` | Seccomp profile. |
+| enableServiceLinks | bool | `true` | Enable service links (inject namespace Service info as env vars). |
+| securityContext.enabled | bool | `true` | Apply the pod securityContext. |
+| securityContext.fsGroupChangePolicy | string | `"Always"` | fsGroup change policy. |
+| securityContext.sysctls | list | `[]` | sysctls. |
+| securityContext.supplementalGroups | list | `[]` | Supplemental groups. |
+| securityContext.runAsUser | int | `1000` | Run as this UID. |
+| securityContext.fsGroup | int | `1000` | fsGroup applied to mounted volumes. |
+| securityContext.seccompProfile | object | `{"type":"RuntimeDefault"}` | Seccomp profile. |
+| priorityClassName | string | `""` | PriorityClass name for the pod. |
+| podDisruptionBudget | object | `{}` | PodDisruptionBudget for the registry. Example: `{minAvailable: 1}` or `{maxUnavailable: 1}`. |
+| autoscaling.enabled | bool | `false` | Enable a HorizontalPodAutoscaler (autoscaling/v2, falls back to v1). |
+| autoscaling.minReplicas | int | `1` | Minimum replicas. |
+| autoscaling.maxReplicas | int | `2` | Maximum replicas. |
+| autoscaling.targetCPUUtilizationPercentage | int | `60` | Target average CPU utilization (%). |
+| autoscaling.targetMemoryUtilizationPercentage | int | `60` | Target average memory utilization (%). Requires autoscaling/v2 (k8s >= 1.23). |
+| autoscaling.behavior | object | `{}` | Scaling behavior. Requires autoscaling/v2 (k8s >= 1.23). |
+| nodeSelector | object | `{}` | Node selector for pod assignment. |
+| affinity | object | `{}` | Affinity rules for the pod. |
+| topologySpreadConstraints | object | `{}` | Topology spread constraints for the pod. |
+| tolerations | list | `[]` | Pod tolerations. |
+| extraVolumeMounts | list | `[]` | Additional volumeMounts for the registry container. |
+| extraVolumes | list | `[]` | Additional volumes for the pod. |
+| extraEnvVars | list | `[]` | Additional environment variables for the registry container. |
+| initContainers | list | `[]` | Init containers added to the pod. |
+| extraContainers | list | `[]` | Extra (sidecar) containers added to the Deployment/StatefulSet. |
+| garbageCollect.enabled | bool | `false` | Deploy a CronJob that runs `registry garbage-collect`. Forces the blob descriptor cache off (cache + GC corrupts the store). |
+| garbageCollect.deleteUntagged | bool | `true` | Pass `--delete-untagged` to the garbage collector. |
+| garbageCollect.schedule | string | `"0 1 * * *"` | CronJob schedule (standard cron format). |
+| garbageCollect.restartPolicy | string | `"OnFailure"` | Restart policy for the GC pod. |
+| garbageCollect.podAnnotations | object | `{}` | Annotations for the GC pod. |
+| garbageCollect.podLabels | object | `{}` | Labels for the GC pod. |
+| garbageCollect.resources | object | `{}` | Resource requests/limits for the GC container. |
+| garbageCollect.affinity | object | `{}` | Affinity for the GC pod. Falls back to the top-level `affinity` when unset. |
+| garbageCollect.extraEnvVars | list | `[]` | Additional environment variables for the GC container. |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
-`helm install`.
+`helm install`, or supply a YAML file with `-f values.yaml`.
+
+## Design decisions
+
+The rationale behind the chart's defaults and structure is recorded as
+Architecture Decision Records under [`docs/adr/`](docs/adr/) — for example why
+the chart defaults to a Deployment (StatefulSet opt-in), why `service.create`
+defaults to `true`, and how `haSharedSecret` stays stable across upgrades.
 
 ## Usage
 
@@ -252,7 +254,174 @@ helm install my-registry docker-registry/docker-registry \
   --set persistence.storageClass=gp2
 ```
 
+### Arbitrary registry configuration via `configData`
+
+`configData` is rendered verbatim into the registry's `config.yml`, so any
+Distribution config key can be set without a dedicated value. For example, to
+disable storage redirects (useful when S3 is not directly reachable by clients):
+
+```yaml
+configData:
+  storage:
+    redirect:
+      disable: true
+```
+
+The same approach covers options like `storage.maintenance.uploadpurging`,
+`storage.delete.enabled`, and custom `http.headers`.
+
+### S3 with an IAM instance profile / IRSA
+
+When the node or pod identity already grants S3 access, omit `secrets.s3`
+entirely — the chart will not emit static-credential env vars and the registry
+falls back to the AWS credential chain:
+
+```yaml
+storage: s3
+s3:
+  region: us-east-1
+  bucket: my-registry-bucket
+# no secrets.s3 block -> uses the instance profile / IRSA role
+```
+
+### Serving HTTPS (TLS)
+
+Two ways to terminate TLS at the registry:
+
+- **Existing Secret** — reference a `kubernetes.io/tls` Secret you manage
+  (cert-manager, etc.):
+
+  ```yaml
+  tlsSecretName: registry-tls
+  ```
+
+- **Inline cert/key** — let the chart create the Secret from PEM material
+  (`tlsSecretName` takes precedence if both are set):
+
+  ```yaml
+  tls:
+    crt: |
+      -----BEGIN CERTIFICATE-----
+      ...
+    key: |
+      -----BEGIN PRIVATE KEY-----
+      ...
+  ```
+
+Either way the registry mounts the cert at `/etc/ssl/docker`, serves HTTPS, and
+the probes switch to the HTTPS scheme.
+
+### Redis blob descriptor cache
+
+For multi-replica HA, back the blob descriptor cache with Redis. Put the
+connection settings in `configData` (rendered into `config.yml`) and the
+password under `redis` so it stays out of the ConfigMap (injected as
+`REGISTRY_REDIS_PASSWORD`):
+
+```yaml
+configData:
+  storage:
+    cache:
+      blobdescriptor: redis
+  redis:
+    addr: redis-master:6379
+    db: 0
+    dialtimeout: 10ms
+    readtimeout: 10ms
+    writetimeout: 10ms
+redis:
+  password: my-redis-password
+  # or reference an external Secret with a redisPassword key:
+  # secretRef: my-redis-secret
+```
+
+### Token authentication / RBAC
+
+Delegate authorization to an external token server by passing the registry's
+[`auth.token`](https://distribution.github.io/distribution/about/configuration/#token)
+config through `configData`, and mount the issuer's root cert bundle with
+`extraVolumes`/`extraVolumeMounts`:
+
+```yaml
+configData:
+  auth:
+    token:
+      realm: "https://auth.example.com/token"
+      service: "container_registry"
+      issuer: "auth-server"
+      rootcertbundle: "/etc/docker/registry/auth.crt"
+extraVolumes:
+  - name: auth-cert
+    secret:
+      secretName: registry-auth-cert
+extraVolumeMounts:
+  - name: auth-cert
+    mountPath: /etc/docker/registry/auth.crt
+    subPath: auth.crt
+    readOnly: true
+```
+
+### Trusting a private CA
+
+To make the registry (e.g. as a proxy/mirror) trust an upstream served by a
+private CA, mount the CA bundle into the system trust store via `extraVolumes`/
+`extraVolumeMounts`:
+
+```yaml
+extraVolumes:
+  - name: private-ca
+    configMap:
+      name: my-private-ca   # contains ca.crt
+extraVolumeMounts:
+  - name: private-ca
+    mountPath: /etc/ssl/certs/my-private-ca.crt
+    subPath: ca.crt
+    readOnly: true
+```
+
+## Testing
+
+The chart ships an in-cluster smoke test:
+
+```console
+helm test my-registry
+```
+
+A full multi-layer suite (static analysis, helm-unittest, and cluster
+integration) lives under [`tests/`](tests/) — see
+[`tests/README.md`](tests/README.md).
+
 ## Changelog
+
+### 4.0.1
+
+Bug-fix release addressing issues still open upstream:
+
+- **haSharedSecret no longer regenerates on every render** (upstream #187). The
+  value is now read back from the existing in-cluster Secret via `lookup` and
+  only generated on first install, eliminating ArgoCD OutOfSync churn and the HA
+  request-signing breakage caused by a rotating secret.
+- **S3 with an IAM instance profile / IRSA no longer fails to template**
+  (upstream #71). The S3 credential env vars and Secret keys are guarded so an
+  unset `secrets.s3` falls back to the AWS credential chain instead of a nil
+  pointer error.
+- **`prometheusRule.enabled` without rules now applies cleanly** (upstream #150).
+  An empty but valid `groups: []` is emitted instead of an empty `spec:` that the
+  API rejected.
+- Documented `configData` passthrough for arbitrary registry config such as
+  `storage.redirect.disable` (upstream #91) and the S3 instance-profile pattern.
+- Added `values.schema.json` validation and helm-docs-generated parameter docs.
+
+New features:
+
+- **In-chart TLS** (upstream #112). Set `tls.crt`/`tls.key` to have the chart
+  create the `kubernetes.io/tls` Secret it serves HTTPS from, instead of
+  pre-creating one and pointing `tlsSecretName` at it.
+- **Redis blob descriptor cache** (upstream #95). `redis.password` /
+  `redis.secretRef` inject `REGISTRY_REDIS_PASSWORD` from a Secret; connection
+  settings go through `configData.redis`.
+- Documented token-auth/RBAC (upstream #197) and private-CA trust (upstream #64)
+  patterns using `configData.auth.token` and `extraVolumes`/`extraVolumeMounts`.
 
 ### 4.0.0
 
@@ -283,3 +452,6 @@ upstream 3.0.0 is non-disruptive.
 - Adopted the Kubernetes/Helm recommended `app.kubernetes.io/*` labels.
 - Corrected the documented `image.tag` (`3.0.0`) and `configPath`
   (`/etc/distribution`) defaults.
+
+----------------------------------------------
+_Documentation for the configuration table above is generated from `values.yaml`._
