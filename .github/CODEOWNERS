@@ -1,0 +1,6 @@
+# Code owners for docker-registry.helm
+# These owners are requested for review automatically on matching PRs.
+# Docs: https://docs.github.com/articles/about-code-owners
+
+# Default owner for everything in the repo.
+*       @risadams

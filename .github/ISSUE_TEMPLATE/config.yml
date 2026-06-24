@@ -1,0 +1,13 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Registry application bug (not the chart)
+    url: https://github.com/distribution/distribution/issues
+    about: >-
+      Issues with the registry container image itself (storage, auth behavior,
+      API) belong upstream in distribution/distribution, not this chart.
+  - name: Security vulnerability
+    url: https://github.com/risadams/docker-registry.helm/security/advisories/new
+    about: Please report security issues privately, not as public issues. See SECURITY.md.
+  - name: Question / usage help
+    url: https://github.com/risadams/docker-registry.helm/discussions
+    about: Ask configuration and usage questions in Discussions.

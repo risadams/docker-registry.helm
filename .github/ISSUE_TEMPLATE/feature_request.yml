@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new option or capability for the chart
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Requests should be about the **Helm chart** (a new value, template, or
+        behavior). Capabilities of the registry application itself belong in
+        [distribution/distribution](https://github.com/distribution/distribution).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do that the chart doesn't support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch the values/templates you'd expect. Example values welcome.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried (e.g. via `configData`, `extraVolumes`, `extraEnvVars`).
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to open a PR for this

@@ -1,0 +1,13 @@
+# Normalize line endings: the toolchain (helm, bash scripts) expects LF.
+* text=auto eol=lf
+
+# Shell scripts and YAML must stay LF even on Windows checkouts.
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.tpl text eol=lf
+Makefile text eol=lf
+
+# Treat chart packages and images as binary.
+*.tgz binary
+*.png binary
