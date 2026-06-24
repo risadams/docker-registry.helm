@@ -30,4 +30,5 @@
 /docs/
 /README.md.gotmpl
 /.helm-docs.yaml
+/SECURITY.md
 
