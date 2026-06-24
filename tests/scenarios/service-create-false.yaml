@@ -1,0 +1,5 @@
+# Scenario: service.create=false (Service managed externally).
+# Functional goal: NO Service object is created. The in-chart helm test hook
+# also skips itself (it requires a Service). The harness asserts absence.
+service:
+  create: false

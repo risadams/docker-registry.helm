@@ -1,0 +1,84 @@
+suite: cronjob
+templates:
+  - templates/cronjob.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+tests:
+  - it: is absent unless garbage collection is enabled
+    template: templates/cronjob.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a CronJob when enabled
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-docker-registry-garbage-collector
+
+  - it: uses the configured schedule and restartPolicy
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+        schedule: "30 2 * * *"
+        restartPolicy: Never
+    asserts:
+      - equal:
+          path: spec.schedule
+          value: "30 2 * * *"
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: Never
+
+  - it: passes the delete-untagged flag through
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+        deleteUntagged: false
+    asserts:
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command
+          content: "--delete-untagged=false"
+
+  - it: appends garbageCollect.extraEnvVars
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+        extraEnvVars:
+          - name: GC_FLAG
+            value: "1"
+    asserts:
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env
+          content:
+            name: GC_FLAG
+            value: "1"
+
+  - it: prefers garbageCollect.affinity over the top-level affinity
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: gc
+                      operator: Exists
+      affinity:
+        podAntiAffinity: {}
+    asserts:
+      - isNotNullOrEmpty:
+          path: spec.jobTemplate.spec.template.spec.affinity.nodeAffinity
+      - isNull:
+          path: spec.jobTemplate.spec.template.spec.affinity.podAntiAffinity

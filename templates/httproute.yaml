@@ -8,10 +8,7 @@ metadata:
   name: {{ template "docker-registry.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    {{- include "docker-registry.labels" . | nindent 4 }}
-{{- if $route.labels }}
-{{ toYaml $route.labels | indent 4 }}
-{{- end }}
+    {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" $route.labels) | nindent 4 }}
 {{- if $route.annotations }}
   annotations:
     {{- range $key, $value := $route.annotations }}

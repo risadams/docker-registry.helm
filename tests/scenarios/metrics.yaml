@@ -1,0 +1,21 @@
+# Scenario: metrics enabled with ServiceMonitor + PodMonitor.
+# Functional goal: the debug/metrics port serves Prometheus metrics, and the
+# ServiceMonitor/PodMonitor objects render. NOTE: ServiceMonitor/PodMonitor are
+# prometheus-operator CRDs; on a cluster without those CRDs the integration
+# harness asserts render-only and logs a skip for the live apply.
+metrics:
+  enabled: true
+  port: 5001
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+  podMonitor:
+    enabled: true
+configData:
+  http:
+    debug:
+      addr: :5001
+      prometheus:
+        enabled: true
+        path: /metrics

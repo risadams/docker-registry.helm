@@ -1,0 +1,45 @@
+{{- if .Values.service.create }}
+{{- $svcName := .Values.service.name | default (include "docker-registry.fullname" .) -}}
+{{- $scheme := "http" -}}
+{{- $wgetOpts := "" -}}
+{{- if .Values.tlsSecretName -}}
+{{- $scheme = "https" -}}
+{{- $wgetOpts = "--no-check-certificate" -}}
+{{- end -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "docker-registry.fullname" . }}-test-connection"
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "docker-registry.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  {{- if .Values.imagePullSecrets }}
+  imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 4 }}
+  {{- end }}
+  containers:
+    - name: registry-api-probe
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          URL="{{ $scheme }}://{{ $svcName }}:{{ .Values.service.port }}/v2/"
+          echo "Probing Distribution v2 API at ${URL}"
+          # The /v2/ endpoint returns 200 when open, or 401 when htpasswd auth is
+          # enabled. Both prove the registry HTTP API is serving, so accept either.
+          out="$(wget -S -q -O /dev/null {{ $wgetOpts }} "${URL}" 2>&1 || true)"
+          echo "${out}"
+          if echo "${out}" | grep -qE 'HTTP/[0-9.]+ (200|401)'; then
+            echo "OK: registry API reachable"
+            exit 0
+          fi
+          echo "FAIL: registry API did not return 200/401" >&2
+          exit 1
+{{- end }}

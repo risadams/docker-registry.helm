@@ -1,0 +1,219 @@
+suite: deployment
+# deployment.yaml references configmap.yaml and secret.yaml via checksum
+# include() calls, so they must be loaded for rendering. Each test focuses its
+# assertions back on templates/deployment.yaml.
+templates:
+  - templates/deployment.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+tests:
+  - it: renders a Deployment by default
+    template: templates/deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-docker-registry
+
+  - it: is absent when useStatefulSet is true
+    template: templates/deployment.yaml
+    set:
+      useStatefulSet: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: sets replicaCount
+    template: templates/deployment.yaml
+    set:
+      replicaCount: 4
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 4
+
+  - it: selector matchLabels are the stable app+release pair only
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app: docker-registry
+            release: RELEASE-NAME
+
+  - it: applies the default liveness and readiness probes
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 5000
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 5000
+
+  - it: allows overriding the probes wholesale
+    template: templates/deployment.yaml
+    set:
+      livenessProbe:
+        tcpSocket:
+          port: 5000
+      readinessProbe:
+        tcpSocket:
+          port: 5000
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: 5000
+      - isNull:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: 5000
+
+  - it: uses HTTPS probe scheme when tlsSecretName is set
+    template: templates/deployment.yaml
+    set:
+      tlsSecretName: my-tls
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: injects extra (sidecar) containers before the registry container
+    template: templates/deployment.yaml
+    set:
+      extraContainers:
+        - name: sidecar
+          image: busybox:1.36
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: sidecar
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: docker-registry
+
+  - it: renders initContainers when provided
+    template: templates/deployment.yaml
+    set:
+      initContainers:
+        - name: init
+          image: busybox:1.36
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init
+
+  - it: sets enableServiceLinks from values
+    template: templates/deployment.yaml
+    set:
+      enableServiceLinks: false
+    asserts:
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+
+  - it: sets automountServiceAccountToken from values
+    template: templates/deployment.yaml
+    set:
+      automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+
+  - it: renders topologySpreadConstraints when provided
+    template: templates/deployment.yaml
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].maxSkew
+          value: 1
+
+  - it: merges deployment.labels into metadata.labels without duplicate keys
+    template: templates/deployment.yaml
+    set:
+      deployment:
+        labels:
+          team: platform
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: platform
+      - equal:
+          path: metadata.labels.release
+          value: RELEASE-NAME
+
+  - it: adds deployment.annotations
+    template: templates/deployment.yaml
+    set:
+      deployment:
+        annotations:
+          note: hello
+    asserts:
+      - equal:
+          path: metadata.annotations.note
+          value: hello
+
+  - it: includes a config and secret checksum annotation by default
+    template: templates/deployment.yaml
+    asserts:
+      - isNotNullOrEmpty:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - isNotNullOrEmpty:
+          path: spec.template.metadata.annotations["checksum/secret"]
+
+  - it: omits the secret checksum when an existing secret is used
+    template: templates/deployment.yaml
+    set:
+      existingSecret: my-creds
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["checksum/secret"]
+      - isNotNullOrEmpty:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: wires imagePullSecrets, priorityClassName and image fields
+    template: templates/deployment.yaml
+    set:
+      imagePullSecrets:
+        - name: regcred
+      priorityClassName: high
+      image:
+        repository: myregistry
+        tag: "9.9.9"
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: regcred
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: myregistry:9.9.9
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  - it: mounts the data volume as emptyDir by default
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir:
+              sizeLimit: 0

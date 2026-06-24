@@ -4,10 +4,7 @@ kind: PodMonitor
 metadata:
   name: {{ template "docker-registry.fullname" . }}-podmonitor
   labels:
-    {{- include "docker-registry.labels" . | nindent 4 }}
-{{- if .Values.metrics.podMonitor.labels }}
-{{ toYaml .Values.metrics.podMonitor.labels | indent 4 }}
-{{- end }}
+    {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" .Values.metrics.podMonitor.labels) | nindent 4 }}
 spec:
   podMetricsEndpoints:
   - interval: 15s

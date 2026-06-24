@@ -1,0 +1,123 @@
+suite: pod-spec
+# Covers pod-level knobs: security contexts, pod labels/annotations, tolerations,
+# configPath, configData, and emptydir sizing.
+templates:
+  - templates/deployment.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+tests:
+  - it: applies the pod securityContext by default
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+
+  - it: can disable the pod securityContext
+    template: templates/deployment.yaml
+    set:
+      securityContext:
+        enabled: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.securityContext
+
+  - it: applies the container securityContext by default
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  - it: can disable the container securityContext
+    template: templates/deployment.yaml
+    set:
+      containerSecurityContext:
+        enabled: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: applies podAnnotations and podLabels
+    template: templates/deployment.yaml
+    set:
+      podAnnotations:
+        prometheus.io/scrape: "true"
+      podLabels:
+        tier: registry
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: registry
+
+  - it: applies tolerations
+    template: templates/deployment.yaml
+    set:
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: registry
+          effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+
+  - it: applies nodeSelector and affinity
+    template: templates/deployment.yaml
+    set:
+      nodeSelector:
+        disktype: ssd
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: []
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+      - isNotNull:
+          path: spec.template.spec.affinity.podAntiAffinity
+
+  - it: honors a custom configPath as the command argument
+    template: templates/deployment.yaml
+    set:
+      configPath: /etc/custom
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: /etc/custom/config.yml
+
+  - it: respects a custom emptydir size when persistence is disabled
+    template: templates/deployment.yaml
+    set:
+      emptydir:
+        size: 2Gi
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir:
+              sizeLimit: 2Gi
+
+  - it: surfaces configData into the config checksum (config mount present)
+    template: templates/deployment.yaml
+    set:
+      configData:
+        log:
+          level: debug
+    asserts:
+      - isNotNullOrEmpty:
+          path: spec.template.metadata.annotations["checksum/config"]

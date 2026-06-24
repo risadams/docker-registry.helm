@@ -1,0 +1,67 @@
+suite: hpa
+templates:
+  - templates/hpa.yaml
+  - templates/hpaV1.yaml
+tests:
+  - it: renders no autoscaling/v2 HPA by default
+    template: templates/hpa.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders an autoscaling/v2 HPA when enabled
+    template: templates/hpa.yaml
+    set:
+      autoscaling:
+        enabled: true
+    capabilities:
+      apiVersions:
+        - autoscaling/v2
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: apiVersion
+          value: autoscaling/v2
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: RELEASE-NAME-docker-registry
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+
+  - it: honors min and max replicas
+    template: templates/hpa.yaml
+    set:
+      autoscaling:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 9
+    capabilities:
+      apiVersions:
+        - autoscaling/v2
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 9
+
+  - it: falls back to autoscaling/v1 when v2 is unavailable
+    template: templates/hpaV1.yaml
+    set:
+      autoscaling:
+        enabled: true
+    capabilities:
+      apiVersions:
+        - autoscaling/v1
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: apiVersion
+          value: autoscaling/v1
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE

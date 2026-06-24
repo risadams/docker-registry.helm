@@ -48,6 +48,21 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end -}}
 
 {{/*
+Common labels merged with a caller-supplied label map, with the caller's labels
+taking precedence. Use this anywhere user-provided labels (e.g.
+.Values.service.labels) are combined with the chart labels, so an overridden key
+such as "release" collapses to a single map entry instead of emitting a
+duplicate YAML key.
+
+Usage: {{ include "docker-registry.labels.merged" (dict "ctx" . "extra" .Values.service.labels) | nindent 4 }}
+*/}}
+{{- define "docker-registry.labels.merged" -}}
+{{- $base := fromYaml (include "docker-registry.labels" .ctx) -}}
+{{- $extra := .extra | default dict -}}
+{{- toYaml (merge (deepCopy $extra) $base) -}}
+{{- end -}}
+
+{{/*
 Resolve the name of the Secret to use. When existingSecret is set, the chart
 references that Secret instead of creating its own.
 */}}

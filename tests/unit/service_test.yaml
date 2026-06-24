@@ -1,0 +1,101 @@
+suite: service
+templates:
+  - templates/service.yaml
+tests:
+  - it: is created by default
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: registry
+
+  - it: is absent when service.create is false
+    set:
+      service:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: falls back to the fullname when service.name is empty
+    set:
+      service:
+        name: ""
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-docker-registry
+
+  - it: honors the service type and port
+    set:
+      service:
+        type: LoadBalancer
+        port: 5050
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 5050
+
+  - it: exposes a metrics port when metrics are enabled
+    set:
+      metrics:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 5001
+            protocol: TCP
+            name: http-metrics
+            targetPort: 5001
+
+  - it: sets dual-stack ipFamilies and ipFamilyPolicy
+    set:
+      service:
+        ipFamilies:
+          - IPv4
+          - IPv6
+        ipFamilyPolicy: PreferDualStack
+    asserts:
+      - equal:
+          path: spec.ipFamilyPolicy
+          value: PreferDualStack
+      - equal:
+          path: spec.ipFamilies[1]
+          value: IPv6
+
+  - it: merges custom service labels without duplicating release
+    set:
+      service:
+        labels:
+          tier: backend
+          release: custom
+    asserts:
+      - equal:
+          path: metadata.labels.tier
+          value: backend
+      - equal:
+          path: metadata.labels.release
+          value: custom
+
+  - it: applies a NodePort when type is NodePort
+    set:
+      service:
+        type: NodePort
+        nodePort: 32000
+    asserts:
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 32000
+
+  - it: names the port https when tlsSecretName is set
+    set:
+      tlsSecretName: my-tls
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: https-5000

@@ -1,0 +1,9 @@
+# Scenario: PVC-backed persistence on a Deployment.
+# Functional goal: a PVC is created and bound; a pushed blob survives a pod
+# restart. Uses the cluster default StorageClass.
+persistence:
+  enabled: true
+  size: 1Gi
+  keep: false        # let teardown remove the PVC for this test
+  annotations:
+    test.docker-registry/scenario: persistence

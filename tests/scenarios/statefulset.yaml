@@ -1,0 +1,7 @@
+# Scenario: StatefulSet deployment mode with per-replica persistence.
+# Functional goal: a StatefulSet (not a Deployment) is created with a
+# volumeClaimTemplate-provisioned PVC, and the registry serves.
+useStatefulSet: true
+persistence:
+  enabled: true
+  size: 1Gi

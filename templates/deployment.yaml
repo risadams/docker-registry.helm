@@ -5,10 +5,7 @@ metadata:
   name: {{ template "docker-registry.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    {{- include "docker-registry.labels" . | nindent 4 }}
-    {{- with .Values.deployment.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" .Values.deployment.labels) | nindent 4 }}
 {{- if .Values.deployment.annotations }}
   annotations:
 {{ toYaml .Values.deployment.annotations | indent 4 }}

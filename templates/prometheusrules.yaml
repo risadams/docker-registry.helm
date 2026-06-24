@@ -4,11 +4,8 @@ kind: PrometheusRule
 metadata:
   name: {{ template "docker-registry.fullname" . }}
   labels:
-    app.kubernetes.io/component: controller
-    {{- include "docker-registry.labels" . | nindent 4 }}
-  {{- if .Values.metrics.prometheusRule.labels }}
-    {{- toYaml .Values.metrics.prometheusRule.labels | nindent 4 }}
-  {{- end }}
+    {{- $prLabels := merge (dict "app.kubernetes.io/component" "controller") (deepCopy (.Values.metrics.prometheusRule.labels | default dict)) -}}
+    {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" $prLabels) | nindent 4 }}
 spec:
 {{- if .Values.metrics.prometheusRule.rules }}
   groups:

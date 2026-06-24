@@ -1,0 +1,42 @@
+suite: test-connection-hook
+templates:
+  - templates/tests/test-connection.yaml
+tests:
+  - it: renders a helm test pod by default
+    asserts:
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+
+  - it: is skipped when no Service is created
+    set:
+      service:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: probes the service over http by default
+    asserts:
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "http://registry:5000/v2/"
+
+  - it: probes over https when tlsSecretName is set
+    set:
+      tlsSecretName: reg-tls
+    asserts:
+      - matchRegex:
+          path: spec.containers[0].command[2]
+          pattern: "https://registry:5000/v2/"
+
+  - it: uses the registry image for the probe
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: registry:3.0.0
+      - equal:
+          path: spec.restartPolicy
+          value: Never
