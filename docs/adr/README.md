@@ -1,6 +1,7 @@
 ---
 title: Architecture Decision Records
 sidebar_position: 1
+slug: /adr/README
 ---
 
 # Architecture Decision Records
