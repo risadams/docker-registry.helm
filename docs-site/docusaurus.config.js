@@ -20,6 +20,17 @@ const config = {
     },
   },
 
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Caveat:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap'
+      },
+    }
+  ],
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -115,8 +126,8 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Ris Adams. Built with Docusaurus.`,
       },
       prism: {
-        theme: prismThemes.dracula,
-        darkTheme: prismThemes.dracula,
+        theme: prismThemes.oneLight,
+        darkTheme: prismThemes.gruvboxMaterialDark,
         additionalLanguages: ['bash', 'yaml', 'json'],
       },
     }),
