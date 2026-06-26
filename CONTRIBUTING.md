@@ -29,7 +29,7 @@ You need a POSIX shell (Git Bash on Windows is fine), `helm` **>= 3.17**
 local Kubernetes cluster (docker-desktop or kind) is needed only for integration
 tests.
 
-Install the test/dev tooling (helm-unittest, kubeconform, helm-docs) with:
+Install the test/dev tooling (helm-unittest, kubeconform) with:
 
 ```bash
 bash tests/bootstrap.sh
@@ -40,21 +40,15 @@ bash tests/bootstrap.sh
 1. **Branch** off `main`.
 2. **Edit templates and `values.yaml`.** `values.yaml` is the single source of
    truth for options and their documentation — annotate every value with a
-   helm-docs `# --` comment (see existing entries for the style).
+   comment (see existing entries for the style).
 3. **Update `values.schema.json`** if you add or change an option (type, enum,
    etc.). The schema is validated by `helm` on lint/template/install.
-4. **Regenerate the README** — it is generated from `values.yaml` +
-   `README.md.gotmpl`; **do not hand-edit `README.md`**:
-
-   ```bash
-   make docs          # or: helm-docs --sort-values-order=file
-   ```
-5. **Add tests** for the behavior you changed (see below). New options are
+4. **Add tests** for the behavior you changed (see below). New options are
    expected to come with assertions.
-6. **Record a decision.** For a non-trivial design choice, add an ADR under
+5. **Record a decision.** For a non-trivial design choice, add an ADR under
    [`docs/adr/`](docs/adr/) following the existing format and link it in the
    index.
-7. **Run the suite** and commit the regenerated README alongside your change.
+6. **Run the suite** and confirm CI is green before requesting review.
 
 ## Testing
 
@@ -66,9 +60,7 @@ bash tests/test.sh all       # + integration (needs a cluster)
 make test-docs               # README drift + values.schema.json checks only
 ```
 
-- **Docs** (`tests/docs.sh`) — fails if `README.md` is out of sync with
-  `values.yaml`, and checks the schema accepts every scenario and rejects bad
-  input.
+- **Docs** (`tests/docs.sh`) — checks the schema accepts every scenario and rejects bad input.
 - **Static** (`tests/static.sh`) — `helm lint --strict`, render every scenario,
   kubeconform schema validation, structural invariants.
 - **Unit** (`tests/unit/*_test.yaml`, helm-unittest) — per-template assertions;
@@ -91,7 +83,7 @@ kind cluster (non-gating). All required checks must pass before merge.
   change explicitly.
 - Do **not** bump the chart `version` in `Chart.yaml` in feature/fix PRs unless
   asked — releases are cut separately by a maintainer.
-- Ensure CI is green; commit the regenerated `README.md`.
+- Ensure CI is green.
 
 ## Versioning & releases
 

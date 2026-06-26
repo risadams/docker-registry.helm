@@ -1,5 +1,0 @@
-# helm-docs configuration. See https://github.com/norwoodj/helm-docs
-# Generates README.md from README.md.gotmpl + values.yaml annotations.
-sort-values-order: file
-template-files:
-  - README.md.gotmpl

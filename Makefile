@@ -11,22 +11,19 @@ SHELL := bash
 TESTS := tests/test.sh
 ARGS  ?=
 
-.PHONY: help bootstrap docs lint test-docs test-static test-unit test-integration test-offline test-all clean
+.PHONY: help bootstrap lint test-docs test-static test-unit test-integration test-offline test-all clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-bootstrap: ## Install/verify test tooling (helm, helm-unittest, kubeconform, helm-docs)
+bootstrap: ## Install/verify test tooling (helm, helm-unittest, kubeconform)
 	@bash $(TESTS) bootstrap
-
-docs: ## Regenerate README.md from values.yaml + README.md.gotmpl (helm-docs)
-	@helm-docs --sort-values-order=file
 
 lint: ## helm lint --strict only
 	@helm lint --strict .
 
-test-docs: ## Doc layer: README drift check + values.schema.json validation
+test-docs: ## Doc layer: values.schema.json validation
 	@bash $(TESTS) docs
 
 test-static: ## Layer 1: lint + render + kubeconform + invariants (no cluster)

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# docs.sh - Layer 0: documentation & schema validation (cluster-free).
-#   1. README drift: regenerate with helm-docs and fail if it differs from the
-#      committed README.md (keeps docs in sync with values.yaml).
-#   2. values.schema.json: helm lint (schema-validates defaults), the schema
+# docs.sh - Layer 0: schema validation (cluster-free).
+#   1. values.schema.json: helm lint (schema-validates defaults), the schema
 #      accepts every tests/scenarios/*.yaml, and rejects known-bad input.
 #
 # Exit non-zero on any failure. No cluster required.
@@ -12,27 +10,7 @@ set -uo pipefail
 SCENARIO_DIR="$CHART_DIR/tests/scenarios"
 
 # ---------------------------------------------------------------------------
-section "1. README is in sync with values.yaml (helm-docs)"
-if ! command -v helm-docs >/dev/null 2>&1; then
-  warn "helm-docs not installed; skipping drift check (run tests/bootstrap.sh)"
-else
-  # Regenerate into a temp copy and diff, so we never mutate the working tree.
-  tmp="$(mktemp -d)"
-  cp "$CHART_DIR/README.md" "$tmp/README.committed.md"
-  ( cd "$CHART_DIR" && helm-docs --sort-values-order=file >/dev/null 2>&1 )
-  if diff -u "$tmp/README.committed.md" "$CHART_DIR/README.md" >"$tmp/readme.diff" 2>&1; then
-    ok "README.md matches helm-docs output"
-  else
-    ko "README.md is stale — run 'helm-docs' (or 'make docs') and commit"
-    sed -n '1,40p' "$tmp/readme.diff"
-    # restore the committed version so a failed check doesn't leave a dirty tree
-    cp "$tmp/README.committed.md" "$CHART_DIR/README.md"
-  fi
-  rm -rf "$tmp"
-fi
-
-# ---------------------------------------------------------------------------
-section "2. values.schema.json validation"
+section "1. values.schema.json validation"
 if [ ! -f "$CHART_DIR/values.schema.json" ]; then
   ko "values.schema.json missing"
 else

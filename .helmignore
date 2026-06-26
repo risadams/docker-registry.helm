@@ -28,8 +28,6 @@
 /tests/
 /Makefile
 /docs/
-/README.md.gotmpl
-/.helm-docs.yaml
 # Community-health and repository metadata (not chart content).
 /SECURITY.md
 /CONTRIBUTING.md
