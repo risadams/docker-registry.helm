@@ -28,6 +28,7 @@
 /tests/
 /Makefile
 /docs/
+/docs-site/
 # Community-health and repository metadata (not chart content).
 /SECURITY.md
 /CONTRIBUTING.md
