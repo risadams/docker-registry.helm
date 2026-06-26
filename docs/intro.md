@@ -67,5 +67,6 @@ httproute:
 
 - [Configuration reference](configuration) — every value, grouped by concern
 - [Usage examples](usage) — auth, TLS, storage backends, HA, and more
+- [Testing](testing) — running the four-layer test suite locally and in CI
 - [Design decisions](adr/README) — Architecture Decision Records
 - [Changelog](https://github.com/risadams/docker-registry.helm/blob/main/CHANGELOG.md)
