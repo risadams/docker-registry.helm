@@ -1,5 +1,12 @@
 // @ts-check
+const fs = require('fs');
+const path = require('path');
 const { themes: prismThemes } = require('prism-react-renderer');
+
+// Read chart version from Chart.yaml at build time
+const chartYaml = fs.readFileSync(path.resolve(__dirname, '../Chart.yaml'), 'utf8');
+const chartVersion = chartYaml.match(/^version:\s*(.+)$/m)?.[1]?.trim() ?? '0.0.0';
+const appVersion  = chartYaml.match(/^appVersion:\s*(.+)$/m)?.[1]?.trim() ?? '0.0.0';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -64,7 +71,7 @@ const config = {
         respectPrefersColorScheme: false,
       },
       navbar: {
-        title: 'Docker Registry',
+        title: '',
         logo: {
           alt: 'Docker Registry Helm Chart',
           src: 'img/logo.svg',
@@ -82,6 +89,11 @@ const config = {
             position: 'left',
           },
           {
+            type: 'html',
+            position: 'right',
+            value: `<span class="navbar-version-badge">v${chartVersion}</span>`,
+          },
+          {
             href: 'https://github.com/risadams/docker-registry.helm',
             position: 'right',
             className: 'header-github-link',
@@ -91,39 +103,25 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Documentation',
-            items: [
-              { label: 'Introduction',    to: '/docs/intro' },
-              { label: 'Configuration',   to: '/docs/configuration' },
-              { label: 'Usage Examples',  to: '/docs/usage' },
-              { label: 'Design Decisions', to: '/docs/adr/README' },
-            ],
-          },
-          {
-            title: 'Project',
-            items: [
-              {
-                label: 'GitHub',
-                href: 'https://github.com/risadams/docker-registry.helm',
-              },
-              {
-                label: 'Changelog',
-                href: 'https://github.com/risadams/docker-registry.helm/blob/main/CHANGELOG.md',
-              },
-              {
-                label: 'Issues',
-                href: 'https://github.com/risadams/docker-registry.helm/issues',
-              },
-              {
-                label: 'Upstream (twuni)',
-                href: 'https://github.com/twuni/docker-registry.helm',
-              },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} Ris Adams. Built with Docusaurus.`,
+        links: [],
+        copyright: `
+          <div class="footer-bar">
+            <div class="footer-bar__brand">
+              <svg viewBox="0 0 44 44" width="20" height="20" aria-hidden="true">
+                <polygon points="22,5 33,11.5 33,26.5 22,33 11,26.5 11,11.5" fill="#CB0162" opacity=".85"></polygon>
+                <text x="22" y="23.5" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600" fill="#faf6ef">DR</text>
+              </svg>
+              <span>Docker <em>Registry</em> Helm Chart</span>
+            </div>
+            <nav class="footer-bar__links" aria-label="Footer navigation">
+              <a href="https://github.com/risadams/docker-registry.helm">GitHub</a>
+              <a href="https://github.com/risadams/docker-registry.helm/blob/main/CHANGELOG.md">Changelog</a>
+              <a href="https://github.com/risadams/docker-registry.helm/issues">Issues</a>
+              <a href="https://github.com/twuni/docker-registry.helm">Upstream (twuni)</a>
+            </nav>
+            <div class="footer-bar__copy">© ${new Date().getFullYear()} Ris Adams · chart v${chartVersion} · registry v${appVersion}</div>
+          </div>
+        `,
       },
       prism: {
         theme: prismThemes.oneLight,
