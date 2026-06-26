@@ -1,0 +1,74 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'docs-site/**'
+      - 'CHANGELOG.md'
+      - '.github/workflows/docs.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Build & deploy Docusaurus
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # ── Preserve Helm repo artifacts already on gh-pages ────────────────
+      # chart-releaser owns index.yaml and the .tgz packages; we must carry
+      # them through every Docusaurus deploy so the Helm repo keeps working.
+      - name: Save Helm repo artifacts from gh-pages
+        run: |
+          git fetch origin gh-pages
+          mkdir -p /tmp/helm-artifacts
+          git ls-tree --name-only origin/gh-pages \
+            | grep -E '\.(tgz|yaml)$' \
+            | while read f; do
+                git show "origin/gh-pages:$f" > "/tmp/helm-artifacts/$f"
+                echo "saved: $f"
+              done
+
+      # ── Build Docusaurus ─────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: docs-site
+
+      - name: Build site
+        run: npm run build
+        working-directory: docs-site
+
+      # ── Re-inject Helm artifacts into the Docusaurus build output ────────
+      - name: Merge Helm artifacts into build
+        run: |
+          cp /tmp/helm-artifacts/* docs-site/build/ 2>/dev/null || true
+          echo "Helm artifacts in build:"
+          ls /tmp/helm-artifacts/
+
+      # ── Deploy to gh-pages ───────────────────────────────────────────────
+      # clean-exclude ensures chart-releaser artifacts are never deleted even
+      # if they were not successfully copied (belt-and-suspenders).
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs-site/build
+          branch: gh-pages
+          clean: true
+          clean-exclude: |
+            docker-registry-*.tgz
+            index.yaml

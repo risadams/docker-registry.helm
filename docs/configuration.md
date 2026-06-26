@@ -1,3 +1,8 @@
+---
+title: Configuration Reference
+sidebar_position: 2
+---
+
 # Configuration Reference
 
 All configurable values for the `docker-registry` chart. Values are validated

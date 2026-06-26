@@ -1,3 +1,8 @@
+---
+title: Architecture Decision Records
+sidebar_position: 1
+---
+
 # Architecture Decision Records
 
 These ADRs capture the significant design decisions behind this chart — the

@@ -1,3 +1,8 @@
+---
+title: Usage Guide
+sidebar_position: 3
+---
+
 # Usage Guide
 
 Practical examples for common deployment scenarios. For the full list of

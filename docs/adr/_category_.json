@@ -1,0 +1,10 @@
+{
+  "label": "Design Decisions",
+  "position": 4,
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "doc",
+    "id": "adr/README"
+  }
+}

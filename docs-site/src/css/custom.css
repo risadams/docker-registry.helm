@@ -1,0 +1,288 @@
+/**
+ * Protocol-inspired Docusaurus theme.
+ *
+ * Color palette:
+ *   Backgrounds  zinc-900 (#18181b) / zinc-800 (#27272a) / zinc-950 (#09090b)
+ *   Borders      zinc-700 (#3f3f46)
+ *   Text         zinc-300 (#d4d4d8)  muted: zinc-400 (#a1a1aa)
+ *   Accent       sky-500  (#0ea5e9)  hover: sky-400 (#38bdf8)
+ *
+ * Replace with the full Protocol template files when ready.
+ */
+
+/* ── Shared (light fallback) ─────────────────────────────────────────────── */
+
+:root {
+  --ifm-color-primary:          #0ea5e9;  /* sky-500 */
+  --ifm-color-primary-dark:     #0284c7;  /* sky-600 */
+  --ifm-color-primary-darker:   #0369a1;  /* sky-700 */
+  --ifm-color-primary-darkest:  #075985;  /* sky-800 */
+  --ifm-color-primary-light:    #38bdf8;  /* sky-400 */
+  --ifm-color-primary-lighter:  #7dd3fc;  /* sky-300 */
+  --ifm-color-primary-lightest: #bae6fd;  /* sky-200 */
+
+  --ifm-font-family-base: 'Inter', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --ifm-font-family-monospace: ui-monospace, 'SFMono-Regular', Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  --ifm-code-font-size:        92%;
+  --ifm-heading-font-weight:   600;
+  --ifm-global-radius:         0.375rem;
+  --ifm-toc-border-color:      #e4e4e7;
+
+  --docusaurus-highlighted-code-line-bg: rgba(14, 165, 233, 0.12);
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] {
+  --ifm-background-color:         #18181b;  /* zinc-900 */
+  --ifm-background-surface-color: #27272a;  /* zinc-800 */
+  --ifm-footer-background-color:  #09090b;  /* zinc-950 */
+  --ifm-navbar-background-color:  #18181b;
+
+  --ifm-color-content:            #d4d4d8;  /* zinc-300 */
+  --ifm-color-content-secondary:  #a1a1aa;  /* zinc-400 */
+  --ifm-heading-color:            #f4f4f5;  /* zinc-100 */
+
+  --ifm-link-color:               #38bdf8;  /* sky-400 */
+  --ifm-link-hover-color:         #7dd3fc;  /* sky-300 */
+
+  --ifm-toc-border-color:         #3f3f46;  /* zinc-700 */
+  --ifm-color-emphasis-300:       #3f3f46;
+  --ifm-hr-border-color:          #3f3f46;
+  --ifm-table-border-color:       #3f3f46;
+
+  --ifm-code-background:          #27272a;
+  --ifm-pre-background:           #27272a;
+
+  --ifm-navbar-link-color:        #d4d4d8;
+  --ifm-navbar-link-hover-color:  #f4f4f5;
+  --ifm-navbar-shadow:            none;
+
+  --ifm-menu-color:               #a1a1aa;
+  --ifm-menu-color-active:        #f4f4f5;
+  --ifm-menu-link-sublist-icon-filter: invert(1) brightness(2);
+
+  --docusaurus-highlighted-code-line-bg: rgba(14, 165, 233, 0.18);
+}
+
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+
+.navbar {
+  border-bottom: 1px solid #3f3f46;
+  box-shadow: none;
+}
+
+/* Force the navbar dark in both modes */
+.navbar,
+html[data-theme='light'] .navbar {
+  background-color: #18181b;
+}
+
+html[data-theme='light'] .navbar .navbar__link,
+html[data-theme='light'] .navbar .navbar__title {
+  color: #d4d4d8;
+}
+
+html[data-theme='light'] .navbar .navbar__link:hover {
+  color: #f4f4f5;
+}
+
+/* GitHub icon in navbar */
+.header-github-link::before {
+  content: '';
+  display: flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23d4d4d8' d='M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.4-.5-1.6.2-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+
+.menu__list-item-collapsible > .menu__link--sublist,
+.menu__list-item-collapsible > .menu__caret {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #71717a;  /* zinc-500 */
+}
+
+[data-theme='dark'] .menu__link--active {
+  color: #38bdf8;  /* sky-400 */
+}
+
+[data-theme='dark'] .menu__link:hover {
+  color: #f4f4f5;
+  background-color: #27272a;
+}
+
+/* ── Code blocks ─────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] .prism-code {
+  border: 1px solid #3f3f46;
+  border-radius: 0.5rem;
+}
+
+[data-theme='dark'] code {
+  border: 1px solid #3f3f46;
+  background: #27272a;
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] table th {
+  background-color: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] table td {
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] table tr:nth-child(2n) {
+  background-color: rgba(39, 39, 42, 0.5);
+}
+
+/* ── Admonitions ─────────────────────────────────────────────────────────── */
+
+[data-theme='dark'] .alert {
+  border-left-color: var(--ifm-color-primary);
+  background-color: rgba(14, 165, 233, 0.08);
+}
+
+/* ── Hero (homepage) ─────────────────────────────────────────────────────── */
+
+.hero-banner {
+  background: linear-gradient(135deg, #09090b 0%, #18181b 60%, #1c1917 100%);
+  padding: 5rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid #3f3f46;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: #a1a1aa;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+
+.hero-install {
+  display: inline-block;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 0.5rem;
+  padding: 1.25rem 2rem;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.875rem;
+  color: #d4d4d8;
+  text-align: left;
+  margin-bottom: 2.5rem;
+  max-width: 580px;
+  width: 100%;
+}
+
+.hero-install code {
+  display: block;
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0;
+  color: #38bdf8;
+  font-size: inherit;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-button-primary {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #ffffff;
+  padding: 0.65rem 1.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.hero-button-primary:hover {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.hero-button-secondary {
+  background: transparent;
+  border: 1px solid #3f3f46;
+  color: #d4d4d8;
+  padding: 0.65rem 1.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.hero-button-secondary:hover {
+  border-color: #71717a;
+  color: #f4f4f5;
+}
+
+/* Feature cards on homepage */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  max-width: 960px;
+  margin: 4rem auto;
+  padding: 0 2rem;
+}
+
+.feature-card {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.feature-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(14, 165, 233, 0.12);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: #38bdf8;
+  font-size: 1.25rem;
+}
+
+.feature-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 0.5rem;
+}
+
+.feature-card-body {
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  line-height: 1.6;
+  margin: 0;
+}
