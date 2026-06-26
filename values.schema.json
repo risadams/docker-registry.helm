@@ -67,6 +67,14 @@
       }
     },
 
+    "networking": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["gateway", "ingress", "none"] }
+      }
+    },
+
     "ingress": {
       "type": "object",
       "additionalProperties": false,

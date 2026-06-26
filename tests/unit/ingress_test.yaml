@@ -7,10 +7,11 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: renders an Ingress when enabled
+  - it: renders an Ingress when networking.type is ingress
     set:
+      networking:
+        type: ingress
       ingress:
-        enabled: true
         hosts:
           - reg.example.com
     capabilities:
@@ -23,10 +24,24 @@ tests:
           path: spec.rules[0].host
           value: reg.example.com
 
-  - it: points the backend at the service name
+  - it: renders an Ingress via legacy ingress.enabled flag (backward compat)
     set:
       ingress:
         enabled: true
+        hosts:
+          - reg.example.com
+    capabilities:
+      apiVersions:
+        - networking.k8s.io/v1
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: points the backend at the service name
+    set:
+      networking:
+        type: ingress
+      ingress:
         hosts:
           - reg.example.com
       service:
@@ -41,8 +56,9 @@ tests:
 
   - it: sets the ingressClassName
     set:
+      networking:
+        type: ingress
       ingress:
-        enabled: true
         className: traefik
         hosts:
           - reg.example.com
@@ -56,8 +72,9 @@ tests:
 
   - it: renders tls config when provided
     set:
+      networking:
+        type: ingress
       ingress:
-        enabled: true
         hosts:
           - reg.example.com
         tls:
@@ -74,8 +91,9 @@ tests:
 
   - it: merges custom ingress labels without duplicating release
     set:
+      networking:
+        type: ingress
       ingress:
-        enabled: true
         hosts:
           - reg.example.com
         labels:

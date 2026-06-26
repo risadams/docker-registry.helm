@@ -1,4 +1,4 @@
-{{- if .Values.ingress.enabled -}}
+{{- if or (eq .Values.networking.type "ingress") .Values.ingress.enabled -}}
 {{- $apiVersions := .Capabilities.APIVersions -}}
 {{- $serviceName := .Values.service.name | default (include "docker-registry.fullname" .) -}}
 {{- $servicePort := .Values.service.port -}}

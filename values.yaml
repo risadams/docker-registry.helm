@@ -80,11 +80,50 @@ service:
   # -- Additional labels for the Service.
   labels: {}
 
+networking:
+  # -- Networking mode. Controls which object is created to expose the registry.
+  # `"gateway"` (recommended) creates a Gateway API HTTPRoute once `httproute.parentRefs`
+  # is populated. `"ingress"` creates a classic Kubernetes Ingress. `"none"` skips both.
+  # A fresh install with no parentRefs is safe on any cluster even when type is "gateway".
+  type: gateway
+
+httproute:
+  # -- Gateway API HTTPRoute configuration. An HTTPRoute is created when
+  # `networking.type` is `"gateway"` and `parentRefs` is non-empty. Requires the
+  # [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster.
+  # Deprecated: set `networking.type: gateway` instead of `enabled: true`.
+  enabled: false
+  # -- HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`.
+  apiVersion: ""
+  # -- HTTPRoute annotations.
+  annotations: {}
+  # -- HTTPRoute labels.
+  labels: {}
+  # -- (list) Gateway(s) this HTTPRoute attaches to (`parentRefs`). Setting this
+  # triggers HTTPRoute creation when `networking.type` is `"gateway"`.
+  parentRefs: []
+  #   - name: my-gateway
+  #     namespace: gateway-system
+  #     sectionName: https
+  # -- (list) Hostnames matched against the HTTP Host header (templated).
+  hostnames: []
+  #   - registry.example.com
+  # -- (list) Request match conditions. Defaults to a PathPrefix `/` match.
+  matches:
+    - path:
+        type: PathPrefix
+        value: /
+  # -- (list) Filters applied to requests matching the rule.
+  filters: []
+  # -- (list) Additional templated HTTPRoute rules prepended to the default rule.
+  additionalRules: []
+
 ingress:
-  # -- Create an Ingress for the registry.
+  # -- Classic Kubernetes Ingress. Use `networking.type: ingress` to enable.
+  # Deprecated: set `networking.type: ingress` instead of `enabled: true`.
   enabled: false
   # -- IngressClass name.
-  className: nginx
+  className: ""
   # -- Ingress path.
   path: /
   # -- (list) Ingress hostnames.
@@ -101,34 +140,6 @@ ingress:
     # - secretName: chart-example-tls
     #   hosts:
     #     - chart-example.local
-
-httproute:
-  # -- Create a Gateway API HTTPRoute as an alternative to Ingress. Requires the
-  # [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster.
-  enabled: false
-  # -- HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`.
-  apiVersion: ""
-  # -- HTTPRoute annotations.
-  annotations: {}
-  # -- HTTPRoute labels.
-  labels: {}
-  # -- (list) Gateway(s) this HTTPRoute attaches to (`parentRefs`).
-  parentRefs: []
-  #   - name: my-gateway
-  #     namespace: gateway-system
-  #     sectionName: http
-  # -- (list) Hostnames matched against the HTTP Host header (templated).
-  hostnames: []
-  #   - chart-example.local
-  # -- (list) Request match conditions. Defaults to a PathPrefix `/` match.
-  matches:
-    - path:
-        type: PathPrefix
-        value: /
-  # -- (list) Filters applied to requests matching the rule.
-  filters: []
-  # -- (list) Additional templated HTTPRoute rules prepended to the default rule.
-  additionalRules: []
 
 # -- Resource requests/limits for the registry container. Left empty by default
 # so the chart runs on small clusters; set explicitly for production.

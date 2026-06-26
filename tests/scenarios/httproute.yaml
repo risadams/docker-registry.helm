@@ -1,0 +1,15 @@
+# Scenario: Gateway API HTTPRoute enabled.
+# Functional goal: an HTTPRoute object is created with the correct backend
+# Service name and port attached to an example gateway. (No Gateway controller
+# is required to validate the object is created and well-formed.)
+networking:
+  type: gateway
+httproute:
+  parentRefs:
+    - name: my-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - registry.test.local
+  labels:
+    test.docker-registry/scenario: httproute

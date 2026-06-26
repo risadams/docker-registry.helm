@@ -73,22 +73,23 @@ not this table.
 | service.port | int | `5000` | TCP port the Service exposes. |
 | service.annotations | object | `{}` | Additional annotations for the Service. |
 | service.labels | object | `{}` | Additional labels for the Service. |
-| ingress.enabled | bool | `false` | Create an Ingress for the registry. |
-| ingress.className | string | `"nginx"` | IngressClass name. |
+| networking.type | string | `"gateway"` | Networking mode. Controls which object is created to expose the registry. `"gateway"` (recommended) creates a Gateway API HTTPRoute once `httproute.parentRefs` is populated. `"ingress"` creates a classic Kubernetes Ingress. `"none"` skips both. A fresh install with no parentRefs is safe on any cluster even when type is "gateway". |
+| httproute.enabled | bool | `false` | Gateway API HTTPRoute configuration. An HTTPRoute is created when `networking.type` is `"gateway"` and `parentRefs` is non-empty. Requires the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster. Deprecated: set `networking.type: gateway` instead of `enabled: true`. |
+| httproute.apiVersion | string | `""` | HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`. |
+| httproute.annotations | object | `{}` | HTTPRoute annotations. |
+| httproute.labels | object | `{}` | HTTPRoute labels. |
+| httproute.parentRefs | list | `[]` | Gateway(s) this HTTPRoute attaches to (`parentRefs`). Setting this triggers HTTPRoute creation when `networking.type` is `"gateway"`. |
+| httproute.hostnames | list | `[]` | Hostnames matched against the HTTP Host header (templated). |
+| httproute.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | Request match conditions. Defaults to a PathPrefix `/` match. |
+| httproute.filters | list | `[]` | Filters applied to requests matching the rule. |
+| httproute.additionalRules | list | `[]` | Additional templated HTTPRoute rules prepended to the default rule. |
+| ingress.enabled | bool | `false` | Classic Kubernetes Ingress. Use `networking.type: ingress` to enable. Deprecated: set `networking.type: ingress` instead of `enabled: true`. |
+| ingress.className | string | `""` | IngressClass name. |
 | ingress.path | string | `"/"` | Ingress path. |
 | ingress.hosts | list | `["chart-example.local"]` | Ingress hostnames. |
 | ingress.annotations | object | `{}` | Ingress annotations. |
 | ingress.labels | object | `{}` | Additional Ingress labels. |
 | ingress.tls | list | `nil` | Ingress TLS configuration. Secrets must be created in the namespace. |
-| httproute.enabled | bool | `false` | Create a Gateway API HTTPRoute as an alternative to Ingress. Requires the [Gateway API CRDs](https://gateway-api.sigs.k8s.io/) in the cluster. |
-| httproute.apiVersion | string | `""` | HTTPRoute apiVersion. Empty defaults to `gateway.networking.k8s.io/v1`. |
-| httproute.annotations | object | `{}` | HTTPRoute annotations. |
-| httproute.labels | object | `{}` | HTTPRoute labels. |
-| httproute.parentRefs | list | `[]` | Gateway(s) this HTTPRoute attaches to (`parentRefs`). |
-| httproute.hostnames | list | `[]` | Hostnames matched against the HTTP Host header (templated). |
-| httproute.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | Request match conditions. Defaults to a PathPrefix `/` match. |
-| httproute.filters | list | `[]` | Filters applied to requests matching the rule. |
-| httproute.additionalRules | list | `[]` | Additional templated HTTPRoute rules prepended to the default rule. |
 | resources | object | `{}` | Resource requests/limits for the registry container. Left empty by default so the chart runs on small clusters; set explicitly for production. |
 | persistence.accessMode | string | `"ReadWriteOnce"` | Access mode for the PVC. |
 | persistence.enabled | bool | `false` | Use a PersistentVolumeClaim for registry storage (filesystem backend). |

@@ -2,8 +2,9 @@
 # Functional goal: an Ingress object is created with the correct backend
 # Service name and port. (No ingress controller is required to validate the
 # object is created and well-formed.)
+networking:
+  type: ingress
 ingress:
-  enabled: true
   className: nginx
   hosts:
     - registry.test.local

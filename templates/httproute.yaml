@@ -1,4 +1,5 @@
-{{- if .Values.httproute.enabled -}}
+{{- $gatewayActive := or (eq .Values.networking.type "gateway") .Values.httproute.enabled -}}
+{{- if and $gatewayActive .Values.httproute.parentRefs -}}
 {{- $route := .Values.httproute -}}
 {{- $serviceName := .Values.service.name | default (include "docker-registry.fullname" .) -}}
 {{- $servicePort := .Values.service.port -}}

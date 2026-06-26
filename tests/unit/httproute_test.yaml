@@ -2,15 +2,24 @@ suite: httproute
 templates:
   - templates/httproute.yaml
 tests:
-  - it: is absent by default
+  - it: is absent by default (no parentRefs set)
     asserts:
       - hasDocuments:
           count: 0
 
-  - it: renders an HTTPRoute when enabled
+  - it: is absent when networking.type is gateway but parentRefs is empty
     set:
+      networking:
+        type: gateway
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders an HTTPRoute when networking.type is gateway and parentRefs provided
+    set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: my-gateway
     asserts:
@@ -23,10 +32,21 @@ tests:
           path: spec.parentRefs[0].name
           value: my-gateway
 
-  - it: allows overriding the apiVersion
+  - it: renders an HTTPRoute via legacy httproute.enabled flag (backward compat)
     set:
       httproute:
         enabled: true
+        parentRefs:
+          - name: my-gateway
+    asserts:
+      - isKind:
+          of: HTTPRoute
+
+  - it: allows overriding the apiVersion
+    set:
+      networking:
+        type: gateway
+      httproute:
         apiVersion: gateway.networking.k8s.io/v1beta1
         parentRefs:
           - name: gw
@@ -37,8 +57,9 @@ tests:
 
   - it: defaults the backend to the service name and port
     set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: gw
       service:
@@ -54,8 +75,9 @@ tests:
 
   - it: templates hostnames
     set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: gw
         hostnames:
@@ -67,8 +89,9 @@ tests:
 
   - it: applies the default PathPrefix match
     set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: gw
     asserts:
@@ -81,8 +104,9 @@ tests:
 
   - it: applies filters on the default rule
     set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: gw
         filters:
@@ -98,8 +122,9 @@ tests:
 
   - it: prepends additionalRules before the default rule
     set:
+      networking:
+        type: gateway
       httproute:
-        enabled: true
         parentRefs:
           - name: gw
         additionalRules:
