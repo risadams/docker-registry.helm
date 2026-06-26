@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkdocker_registry_docs=globalThis.webpackChunkdocker_registry_docs||[]).push([[647],{7121(e,r,s){s.r(r),s.d(r,{default:()=>i});s(6540);var c=s(4164),a=s(7559),o=s(5500),d=s(2831),t=s(1656),u=s(4848);function i(e){return(0,u.jsx)(o.e3,{className:(0,c.A)(a.G.wrapper.docsPages),children:(0,u.jsx)(t.A,{children:(0,d.v)(e.route.routes)})})}}}]);
