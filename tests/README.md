@@ -78,6 +78,39 @@ NS_PREFIX=drtest TIMEOUT=240s tests/integration.sh
 Clean up leftovers from an interrupted run: `make clean` (or
 `kubectl delete ns -l ... ` / delete `drtest-*` namespaces).
 
+## Kind cluster setup for NodePort tests
+
+The `htpasswd` and `garbage-collect` scenarios use NodePort services (30577 and
+30578) to let the Docker daemon push/pull images to the running registry.  Kind
+does **not** expose NodePorts to `localhost` by default — they require
+`extraPortMappings` in the cluster config.
+
+Save the following as `kind-config.yaml` and recreate your cluster before
+running `make test-all`:
+
+```yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30577
+    hostPort: 30577
+    protocol: TCP
+  - containerPort: 30578
+    hostPort: 30578
+    protocol: TCP
+```
+
+```bash
+kind delete cluster          # remove existing cluster
+kind create cluster --config kind-config.yaml
+```
+
+Without this, the NodePort probes auto-skip with a `[ WARN ]` message (the
+object-level assertions still run).  Set `SKIP_DOCKER=1` to silence the warnings
+and skip those probes intentionally.
+
 ## What CI can and cannot cover
 
 CI runs in `.github/workflows/ci.yaml` as a hybrid:

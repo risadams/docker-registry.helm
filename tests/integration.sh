@@ -34,6 +34,17 @@ if [ "${SKIP_DOCKER:-0}" = "1" ] || ! docker version >/dev/null 2>&1; then
   warn "docker daemon unavailable or skipped: push/pull depth will be skipped"
 fi
 
+# _nodeport_live <port> -> 0 if localhost:<port> answers with an HTTP 200 or 401,
+# else 1.  Used to detect whether a NodePort is routable before attempting docker
+# operations.  Docker Desktop (built-in k8s) maps NodePorts to localhost
+# automatically; Kind requires extraPortMappings in the cluster config.
+_nodeport_live() {
+  local port="$1" code
+  code="$(curl -so /dev/null -w '%{http_code}' --max-time 3 \
+    "http://localhost:${port}/v2/" 2>/dev/null)"
+  [ "$code" = "401" ] || [ "$code" = "200" ]
+}
+
 # install_release <namespace> <values-file-or-empty> [extra helm args...]
 install_release() {
   local ns="$1" vf="$2"; shift 2
@@ -124,6 +135,11 @@ scenario_garbage_collect() {
     return 0
   fi
   local reg="localhost:30578"
+  if ! _nodeport_live 30578; then
+    warn "garbage-collect: NodePort ${reg} not reachable — seed push skipped (CronJob object verified)"
+    warn "garbage-collect: For Kind: recreate cluster with extraPortMappings for port 30578 (see tests/README.md)"
+    return 0
+  fi
   docker pull registry:3.1.1 >/dev/null 2>&1 || true
   docker tag registry:3.1.1 "$reg/gctest:ci" >/dev/null 2>&1
   if ! docker push "$reg/gctest:ci" >/dev/null 2>&1; then
@@ -250,8 +266,17 @@ scenario_htpasswd() {
   wait_http "http://localhost:5602/v2/" '^401$' >/dev/null
   local anon; anon="$(http_code "http://localhost:5602/v2/")"
   assert_eq "htpasswd: anonymous access rejected" "401" "$anon"
-  # authenticated push/pull via the NodePort (docker-desktop maps localhost)
+  # Authenticated push/pull via the NodePort.  Docker Desktop (built-in k8s) maps
+  # NodePorts to localhost automatically; Kind needs extraPortMappings (see
+  # tests/README.md).  Skip gracefully when the port is not reachable so that a
+  # missing extraPortMappings doesn't surface as a hard chart failure.
   local reg="localhost:30577"
+  if ! _nodeport_live 30577; then
+    warn "htpasswd: NodePort ${reg} not reachable — docker login/push/pull skipped"
+    warn "htpasswd: For Kind: recreate cluster with extraPortMappings for port 30577 (see tests/README.md)"
+    stop_port_forward
+    return 0
+  fi
   if echo "testpass" | docker login "$reg" -u testuser --password-stdin >/dev/null 2>&1; then
     ok "htpasswd: docker login"
     docker pull registry:3.1.1 >/dev/null 2>&1 || true
