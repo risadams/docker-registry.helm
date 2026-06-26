@@ -22,6 +22,69 @@ No cluster is required for the first three layers.
 
 ---
 
+## Prerequisites
+
+### Helm test tooling
+
+The bootstrap script installs and verifies all CLI tools needed by the suite.
+Run it once before anything else:
+
+```bash
+bash tests/bootstrap.sh
+```
+
+It will check for (and where possible install) `helm` ≥ 3.11,
+the `helm-unittest` plugin, `kubeconform`, `helm-docs`, and Python 3.
+
+### Docker Desktop (integration tests only)
+
+Layers 0–2 need only a shell. Layer 3 (integration) requires both a Docker
+daemon and a Kubernetes cluster. The simplest way to get both on a local
+machine is [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+1. Download and install Docker Desktop for your platform.
+2. Open **Settings → Kubernetes** and check **Enable Kubernetes**.
+3. Click **Apply & Restart** and wait for the green Kubernetes status indicator
+   in the bottom-left corner of the Docker Desktop window.
+
+Docker Desktop creates a `docker-desktop` kube context and sets it as the
+active context automatically. Verify with:
+
+```bash
+kubectl config current-context   # should print "docker-desktop"
+kubectl get nodes                # should show one Ready node
+```
+
+The Docker daemon is also available to the test suite at this point, which
+enables the `docker push`/`pull` depth probes in the `htpasswd` and
+`garbage-collect` scenarios.
+
+### Using kind instead of Docker Desktop
+
+[kind](https://kind.sigs.k8s.io/) (Kubernetes in Docker) is a lightweight
+alternative that runs a cluster inside Docker containers. Install it with:
+
+```bash
+# macOS / Linux
+brew install kind
+
+# Windows (Git Bash / Scoop)
+scoop install kind
+```
+
+Then create a cluster:
+
+```bash
+kind create cluster
+kubectl config use-context kind-kind
+```
+
+See [Kind cluster setup for NodePort tests](#kind-cluster-setup-for-nodeport-tests)
+below if you plan to run the `htpasswd` or `garbage-collect` scenarios — those
+require extra port mappings that must be configured at cluster creation time.
+
+---
+
 ## Quick start
 
 ```bash
@@ -50,7 +113,7 @@ On Windows, use Git Bash and the `tests/test.sh` entrypoint directly — no `mak
 
 ## Layer detail
 
-### Layer 0 — Docs (`tests/docs.sh`)
+### Layer 0 — Docs
 
 Regenerates `README.md` via `helm-docs` and diffs the result against the
 committed file. Also validates `values.schema.json`: verifies it parses as JSON
@@ -58,7 +121,7 @@ Schema, runs every `tests/scenarios/*.yaml` file through it (each must pass),
 and runs a small set of known-bad inputs (each must be rejected). Fails fast and
 loudly on any drift or schema error.
 
-### Layer 1 — Static (`tests/static.sh`)
+### Layer 1 — Static
 
 Renders chart defaults plus every file in `tests/scenarios/` and pipes each
 render through kubeconform against the Kubernetes 1.34.1 JSON schemas.
@@ -70,14 +133,14 @@ the unit layer.
 
 Tunables: set `K8S_VERSION` to target a different Kubernetes version (default `1.34.1`).
 
-### Layer 2 — Unit (`tests/unit.sh`)
+### Layer 2 — Unit
 
 Runs `helm unittest` over `tests/unit/*_test.yaml`. Each suite scopes its
 assertions to one template but loads the templates it references (e.g. the
 `checksum/*` annotations pull in `configmap.yaml` / `secret.yaml`).
 `tests/lib/coverage.py` reports which top-level `values.yaml` keys are exercised.
 
-### Layer 3 — Integration (`tests/integration.sh`)
+### Layer 3 — Integration
 
 For each scenario: fresh namespace → `helm install -f scenarios/<x>.yaml --wait`
 → `helm test` → functional probes → uninstall and namespace delete. A cleanup

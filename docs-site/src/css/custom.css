@@ -581,6 +581,43 @@ details summary {
   letter-spacing: -0.01em;
 }
 
+/* ─── Back-to-top button ────────────────────────────── */
+/*
+ * The button's arrow is drawn via ::after using mask: var(--ifm-menu-link-sublist-icon).
+ * We set that variable to `none` above (to hide sidebar collapse icons), which turns
+ * the ::after into a solid filled square. Override ::after directly with an upward
+ * chevron mask so the arrow renders correctly regardless of that variable.
+ */
+.theme-back-to-top-button {
+  background: var(--dr-rose) !important;
+  border-radius: 2px !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  box-shadow: 0 2px 8px rgba(203, 1, 98, 0.35) !important;
+  transition: background var(--ifm-transition-fast), box-shadow var(--ifm-transition-fast) !important;
+}
+
+.theme-back-to-top-button::after {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z'/%3E%3C/svg%3E") 50% / 1.25rem 1.25rem no-repeat !important;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z'/%3E%3C/svg%3E") 50% / 1.25rem 1.25rem no-repeat !important;
+  background-color: #ffffff !important;
+}
+
+.theme-back-to-top-button:hover {
+  background: #a8014f !important;
+  box-shadow: 0 4px 14px rgba(203, 1, 98, 0.45) !important;
+}
+
+[data-theme='dark'] .theme-back-to-top-button {
+  background: #e24a8a !important;
+  box-shadow: 0 2px 8px rgba(226, 74, 138, 0.35) !important;
+}
+
+[data-theme='dark'] .theme-back-to-top-button:hover {
+  background: #c42060 !important;
+  box-shadow: 0 4px 14px rgba(226, 74, 138, 0.45) !important;
+}
+
 /* ─── Scrollbar (WebKit) ────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;

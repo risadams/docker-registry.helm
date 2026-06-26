@@ -6,6 +6,7 @@ const sidebars = {
     'intro',
     'configuration',
     'usage',
+    'testing',
     {
       type: 'category',
       label: 'Design Decisions',
