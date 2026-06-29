@@ -42,7 +42,7 @@ body:
     id: versions
     attributes:
       label: Helm and Kubernetes versions
-      placeholder: e.g. helm 3.18.4, k8s 1.34.1 (kind / docker-desktop / EKS ...)
+      placeholder: e.g. helm 3.21.2, k8s 1.34.1 (kind / docker-desktop / EKS ...)
     validations:
       required: true
   - type: textarea
