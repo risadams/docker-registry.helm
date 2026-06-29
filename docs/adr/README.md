@@ -27,6 +27,7 @@ context. Format: [Michael Nygard's ADR](https://cognitect.com/blog/2011/11/15/do
 | [0013](0013-pin-github-actions-to-commit-shas.md) | Pin GitHub Actions to commit SHAs |
 | [0014](0014-checksum-verify-ci-downloads.md) | Checksum-verify third-party binaries downloaded in CI |
 | [0015](0015-pin-helm-unittest-plugin.md) | Pin the helm-unittest plugin version in CI |
+| [0016](0016-remove-pr-diff-workflow.md) | Remove the PR-diff smoketest workflow |
 
 ## Adding an ADR
 
