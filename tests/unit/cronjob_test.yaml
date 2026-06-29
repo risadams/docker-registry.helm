@@ -82,3 +82,56 @@ tests:
           path: spec.jobTemplate.spec.template.spec.affinity.nodeAffinity
       - isNull:
           path: spec.jobTemplate.spec.template.spec.affinity.podAntiAffinity
+
+  # Lockstep with the Deployment/StatefulSet pod template: the GC pod must carry the
+  # same identity/scheduling fields it previously dropped (ADR-0018).
+  - it: carries automountServiceAccountToken and enableServiceLinks like the workload
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.enableServiceLinks
+          value: true
+
+  - it: honours initContainers and topologySpreadConstraints on the GC pod
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+      initContainers:
+        - name: warmup
+          image: busybox
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: zone
+          whenUnsatisfiable: DoNotSchedule
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.initContainers[0].name
+          value: warmup
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.topologySpreadConstraints[0].maxSkew
+          value: 1
+
+  - it: does not give the GC pod ports, probes, or sidecars
+    template: templates/cronjob.yaml
+    set:
+      garbageCollect:
+        enabled: true
+      extraContainers:
+        - name: istio-proxy
+          image: auto
+    asserts:
+      # a single GC container, no injected sidecar that would block Job completion
+      - lengthEqual:
+          path: spec.jobTemplate.spec.template.spec.containers
+          count: 1
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.containers[0].ports
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.containers[0].livenessProbe
