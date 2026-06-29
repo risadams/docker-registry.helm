@@ -20,6 +20,7 @@ replicas it runs, and how rolling updates are applied.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| `namespace` | string | `""` | Namespace to install the chart's namespaced objects into. Empty uses the release namespace (`.Release.Namespace`). |
 | `replicaCount` | int | `1` | Number of registry replicas. Ignored when `autoscaling.enabled` is true. |
 | `updateStrategy` | object | `{}` | Update strategy for the Deployment or StatefulSet. Empty uses the Kubernetes default (RollingUpdate). Example: `{type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}`. |
 | `useStatefulSet` | bool | `false` | Deploy a StatefulSet with `volumeClaimTemplates` instead of a Deployment + standalone PVC. Use this when each replica needs its own PersistentVolume (e.g. multi-replica with local storage). |
@@ -317,7 +318,7 @@ Prometheus Operator integration is optional.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `metrics.enabled` | bool | `false` | Enable the debug/metrics port and add it to the Service. |
+| `metrics.enabled` | bool | `false` | Open the debug/metrics port on the pod and Service. This only exposes the port; the registry serves Prometheus metrics only when `configData.http.debug.prometheus.enabled` is also `true` (off by default). Set both to scrape metrics. |
 | `metrics.port` | int | `5001` | Debug/metrics port. Must match `configData.http.debug.addr`. |
 | `metrics.serviceMonitor.enabled` | bool | `false` | Create a `ServiceMonitor` for prometheus-operator. |
 | `metrics.serviceMonitor.namespace` | string | `""` | Namespace for the ServiceMonitor. Empty uses the release namespace. |

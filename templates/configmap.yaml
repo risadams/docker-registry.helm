@@ -10,7 +10,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "docker-registry.fullname" . }}-config
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   labels:
     {{- include "docker-registry.labels" . | nindent 4 }}
 data:

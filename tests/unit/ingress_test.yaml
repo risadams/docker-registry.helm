@@ -89,6 +89,41 @@ tests:
           path: spec.tls[0].secretName
           value: reg-tls
 
+  - it: renders ingress annotations
+    set:
+      networking:
+        type: ingress
+      ingress:
+        hosts:
+          - reg.example.com
+        annotations:
+          nginx.ingress.kubernetes.io/rewrite-target: /
+          cert-manager.io/cluster-issuer: letsencrypt
+    capabilities:
+      apiVersions:
+        - networking.k8s.io/v1
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
+          value: /
+      - equal:
+          path: metadata.annotations["cert-manager.io/cluster-issuer"]
+          value: letsencrypt
+
+  - it: omits the annotations key when no ingress annotations are set
+    set:
+      networking:
+        type: ingress
+      ingress:
+        hosts:
+          - reg.example.com
+    capabilities:
+      apiVersions:
+        - networking.k8s.io/v1
+    asserts:
+      - notExists:
+          path: metadata.annotations
+
   - it: merges custom ingress labels without duplicating release
     set:
       networking:

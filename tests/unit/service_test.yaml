@@ -53,6 +53,25 @@ tests:
             name: http-metrics
             targetPort: 5001
 
+  - it: derives the metrics targetPort from configData.http.debug.addr
+    # The targetPort is single-sourced from the debug listen address (helper
+    # docker-registry.metricsPort), not hardcoded, so a custom addr is honoured.
+    set:
+      metrics:
+        enabled: true
+      configData:
+        http:
+          debug:
+            addr: ":9090"
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 5001
+            protocol: TCP
+            name: http-metrics
+            targetPort: 9090
+
   - it: sets dual-stack ipFamilies and ipFamilyPolicy
     set:
       service:

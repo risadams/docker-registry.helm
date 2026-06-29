@@ -10,7 +10,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "docker-registry.fullname" . }}-test-connection"
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   labels:
     {{- include "docker-registry.labels" . | nindent 4 }}
   annotations:

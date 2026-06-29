@@ -55,3 +55,21 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/name"]
           value: docker-registry
+
+  # docker-registry.namespace helper: explicit .Values.namespace wins, otherwise
+  # the release namespace.
+  - it: installs into .Values.namespace when set
+    set:
+      namespace: custom-ns
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+
+  - it: falls back to the release namespace when .Values.namespace is empty
+    release:
+      namespace: rel-ns
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: rel-ns

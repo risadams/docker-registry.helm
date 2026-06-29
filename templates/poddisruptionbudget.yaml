@@ -7,7 +7,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "docker-registry.fullname" . }}
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   labels:
     {{- include "docker-registry.labels" . | nindent 4 }}
 spec:
