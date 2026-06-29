@@ -5,7 +5,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ template "docker-registry.fullname" . }}
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   {{- if or .Values.persistence.keep .Values.persistence.annotations }}
   annotations:
   {{- if .Values.persistence.keep }}

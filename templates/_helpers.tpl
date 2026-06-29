@@ -24,6 +24,26 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Resolve the namespace for the chart's namespaced objects. An explicit
+`.Values.namespace` wins; otherwise the release namespace is used. Centralised so
+the fallback rule lives in one place instead of being repeated in every manifest.
+*/}}
+{{- define "docker-registry.namespace" -}}
+{{- .Values.namespace | default .Release.Namespace -}}
+{{- end -}}
+
+{{/*
+Resolve the metrics/debug port the registry listens on, parsed from
+`configData.http.debug.addr` (e.g. ":5001" -> "5001"), falling back to
+`metrics.port` when the address carries no explicit port. Single source for the
+container port and the Service targetPort so the two cannot drift.
+*/}}
+{{- define "docker-registry.metricsPort" -}}
+{{- $addr := .Values.configData.http.debug.addr | default "" -}}
+{{- (split ":" $addr)._1 | default (.Values.metrics.port | toString) -}}
+{{- end -}}
+
+{{/*
 Common selector labels. These are immutable on Deployments/StatefulSets, so they
 must remain stable across releases (app + release only).
 */}}

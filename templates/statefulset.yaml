@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ template "docker-registry.fullname" . }}
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   labels:
     {{- include "docker-registry.labels.merged" (dict "ctx" . "extra" .Values.deployment.labels) | nindent 4 }}
 {{- if .Values.deployment.annotations }}
@@ -67,7 +67,7 @@ spec:
           ports:
             - containerPort: 5000
             {{- if .Values.metrics.enabled }}
-            - containerPort: {{ (split ":" .Values.configData.http.debug.addr)._1 }}
+            - containerPort: {{ include "docker-registry.metricsPort" . }}
               name: http-metrics
               protocol: TCP
             {{- end }}

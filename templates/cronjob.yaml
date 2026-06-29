@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ template "docker-registry.fullname" . }}-garbage-collector
-  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  namespace: {{ include "docker-registry.namespace" . }}
   labels:
     {{- include "docker-registry.labels" . | nindent 4 }}
 spec:
