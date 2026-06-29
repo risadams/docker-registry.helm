@@ -59,7 +59,7 @@ httproute:
 | Requirement | Version |
 |-------------|---------|
 | Kubernetes  | ≥ 1.19  |
-| Helm        | ≥ 3.2   |
+| Helm        | ≥ 3.2 — both 3.x and 4.x supported |
 | PersistentVolume support | Required if `persistence.enabled` is true |
 | Gateway API CRDs | Required if `networking.type: gateway` |
 
