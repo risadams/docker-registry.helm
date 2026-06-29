@@ -2,19 +2,21 @@
 # bootstrap.sh - install / verify the tooling the test suite needs.
 #
 # Safe to run repeatedly. Installs (when missing):
-#   - helm           >= 3.11 (helm-unittest requires it)
+#   - helm           latest 3.x (>= 3.17) or any 4.x (helm-unittest's platformHooks
+#                    field needs helm >= 3.17)
 #   - helm-unittest  plugin
 #   - kubeconform    (static manifest schema validation)
 #   - kind           (optional; only used for the CI-parity integration target)
 #
 # Honors these env vars:
-#   HELM_MIN_MINOR   minimum acceptable helm 3.x minor (default 11)
+#   HELM_MIN_MINOR   minimum acceptable helm 3.x minor (default 17). helm 4.x+ is
+#                    always accepted regardless of this value.
 #   BIN_DIR          where to drop downloaded binaries (default: first writable
 #                    of /c/bin, /usr/local/bin, $HOME/bin)
 #   SKIP_KIND        set to 1 to skip the optional kind check
 set -euo pipefail
 
-HELM_MIN_MINOR="${HELM_MIN_MINOR:-11}"
+HELM_MIN_MINOR="${HELM_MIN_MINOR:-17}"
 HELM_FALLBACK_VERSION="${HELM_FALLBACK_VERSION:-v3.21.2}"
 KUBECONFORM_VERSION="${KUBECONFORM_VERSION:-v0.8.0}"
 # helm-unittest plugin version, pinned to match CI (ci.yaml HELM_UNITTEST_VERSION).
@@ -86,7 +88,17 @@ kubeconform_sha256() {
 }
 
 # --- helm --------------------------------------------------------------------
-helm_minor() { helm version --short 2>/dev/null | sed -E 's/^v?3\.([0-9]+)\..*/\1/; t; s/.*/0/'; }
+# Accept the latest helm 3.x (minor >= HELM_MIN_MINOR) or any helm 4.x+.
+# `helm version --short` prints e.g. "v3.21.2+g..." or "v4.2.2+g...".
+helm_supported() {
+  local v maj min
+  v="$(helm version --short 2>/dev/null | sed -E 's/^[^0-9]*([0-9]+)\.([0-9]+).*/\1 \2/')"
+  maj="${v%% *}"; min="${v##* }"
+  case "$maj" in ''|*[!0-9]*) return 1 ;; esac
+  case "$min" in ''|*[!0-9]*) return 1 ;; esac
+  if [ "$maj" -ge 4 ]; then return 0; fi
+  [ "$maj" -eq 3 ] && [ "$min" -ge "$HELM_MIN_MINOR" ]
+}
 
 install_helm() {
   log "installing helm $HELM_FALLBACK_VERSION -> $BIN_DIR"
@@ -100,8 +112,8 @@ install_helm() {
 
 if ! have helm; then
   install_helm
-elif [ "$(helm_minor)" -lt "$HELM_MIN_MINOR" ] 2>/dev/null; then
-  warn "helm $(helm version --short) is older than 3.${HELM_MIN_MINOR}; upgrading"
+elif ! helm_supported; then
+  warn "helm $(helm version --short) is unsupported (need helm >= 3.${HELM_MIN_MINOR} or >= 4.x); installing $HELM_FALLBACK_VERSION"
   install_helm
 fi
 log "helm: $(helm version --short)"
