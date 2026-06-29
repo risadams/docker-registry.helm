@@ -23,6 +23,7 @@ context. Format: [Michael Nygard's ADR](https://cognitect.com/blog/2011/11/15/do
 | [0009](0009-test-strategy.md) | Four-layer test strategy with an in-chart helm test hook |
 | [0010](0010-docs-contract.md) | values.yaml as docs source; helm-docs + values.schema.json |
 | [0011](0011-tls-and-redis-cache.md) | In-chart TLS material and Redis cache credentials |
+| [0012](0012-configmap-render-without-mutating-values.md) | Render the ConfigMap without mutating .Values |
 
 ## Adding an ADR
 

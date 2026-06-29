@@ -27,6 +27,21 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "1b. template source hygiene (no in-place .Values mutation)"
+# ADR-0012: templates must treat .Values as read-only. An in-place `set`/`unset`
+# on .Values mutates the tree shared by the whole render, so any template
+# processed afterwards sees the change and output becomes render-order dependent.
+# Derive a local `deepCopy` instead. This guard is the regression test for that
+# rule: the bug it prevents is invisible in rendered output until some later
+# template happens to read the mutated key, so it cannot be caught by an
+# output assertion.
+if grep -rnE '\b(set|unset)[[:space:]]+\.Values\b' "$CHART_DIR/templates"; then
+  ko "template mutates .Values in place (use deepCopy; see docs/adr/0012)"
+else
+  ok "no in-place .Values mutation in templates"
+fi
+
+# ---------------------------------------------------------------------------
 section "2-3. render + kubeconform each scenario (k8s $K8S_VERSION)"
 
 have_kubeconform=1

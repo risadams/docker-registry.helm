@@ -28,6 +28,28 @@ tests:
           path: data["config.yml"]
           pattern: "blobdescriptor: disabled"
 
+  - it: GC override wins over an explicit blobdescriptor and leaves the rest of configData intact
+    # Exercises the deepCopy+set path (ADR-0012) with a non-default starting
+    # value: GC still forces the cache off, and overriding the copy must not drop
+    # any other configData key.
+    set:
+      garbageCollect:
+        enabled: true
+      configData:
+        storage:
+          cache:
+            blobdescriptor: redis
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "blobdescriptor: disabled"
+      - notMatchRegex:
+          path: data["config.yml"]
+          pattern: "blobdescriptor: redis"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "addr: :5000"
+
   - it: carries the recommended labels
     asserts:
       - equal:

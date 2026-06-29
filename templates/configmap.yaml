@@ -1,6 +1,10 @@
-{{- /* Blob caching and the garbage-collection cronjob do not mix */ -}}
+{{- /* Blob caching and the garbage-collection cronjob do not mix. Work on a
+       local deep copy so we never mutate the shared .Values: an in-place `set`
+       would leak into any template rendered after this one and make behaviour
+       depend on Helm's file render order. */ -}}
+{{- $configData := deepCopy .Values.configData -}}
 {{- if .Values.garbageCollect.enabled -}}
-{{- $_ := set .Values.configData.storage.cache "blobdescriptor" "disabled" -}}
+{{- $_ := set $configData.storage.cache "blobdescriptor" "disabled" -}}
 {{- end -}}
 apiVersion: v1
 kind: ConfigMap
@@ -11,4 +15,4 @@ metadata:
     {{- include "docker-registry.labels" . | nindent 4 }}
 data:
   config.yml: |-
-{{ toYaml .Values.configData | indent 4 }}
+{{ toYaml $configData | indent 4 }}
