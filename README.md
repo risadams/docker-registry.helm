@@ -40,7 +40,7 @@ helm install my-registry docker-registry/docker-registry
 ### Via the OCI registry (GHCR)
 
 ```console
-helm install my-registry oci://ghcr.io/risadams/docker-registry --version 4.0.1
+helm install my-registry oci://ghcr.io/risadams/docker-registry --version 4.0.2
 ```
 
 ## Quick start
