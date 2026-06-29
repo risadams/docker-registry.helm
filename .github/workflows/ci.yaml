@@ -18,6 +18,9 @@ env:
   # helm-unittest's plugin.yaml uses the `platformHooks` field, which requires
   # helm >= 3.17; older helm fails the plugin install with an unmarshal error.
   HELM_VERSION: v3.18.4
+  # Pin the helm-unittest plugin; a bare `helm plugin install <url>` checks out
+  # the default branch HEAD — unpinned, non-reproducible, and unvetted.
+  HELM_UNITTEST_VERSION: v1.1.1
   KUBECONFORM_VERSION: v0.8.0
   # SHA256 of kubeconform-linux-amd64.tar.gz for KUBECONFORM_VERSION, from the
   # release CHECKSUMS file. Bump this together with KUBECONFORM_VERSION above.
@@ -108,7 +111,7 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION }}
       - name: Install helm-unittest plugin
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version "${HELM_UNITTEST_VERSION}"
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
