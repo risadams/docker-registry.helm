@@ -24,7 +24,7 @@ A Helm chart for deploying a private [Docker Registry](https://distribution.gith
 ## Prerequisites
 
 - Kubernetes 1.19+
-- Helm 3.2+
+- Helm 3.2+ — both Helm 3.x and 4.x are supported (CI tests the latest of each)
 - PersistentVolume support (if persistence is required)
 
 ## Installing
