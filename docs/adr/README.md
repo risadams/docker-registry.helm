@@ -25,6 +25,7 @@ context. Format: [Michael Nygard's ADR](https://cognitect.com/blog/2011/11/15/do
 | [0011](0011-tls-and-redis-cache.md) | In-chart TLS material and Redis cache credentials |
 | [0012](0012-configmap-render-without-mutating-values.md) | Render the ConfigMap without mutating .Values |
 | [0013](0013-pin-github-actions-to-commit-shas.md) | Pin GitHub Actions to commit SHAs |
+| [0014](0014-checksum-verify-ci-downloads.md) | Checksum-verify third-party binaries downloaded in CI |
 
 ## Adding an ADR
 
