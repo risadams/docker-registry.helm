@@ -32,22 +32,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ env.HELM_VERSION }}
       - run: helm lint --strict .
+
+  # Supply-chain guard (ADR-0013): every action must be pinned to a full commit
+  # SHA, never a movable tag. Fails the build if any `uses:` is not SHA-pinned.
+  actions-pinned:
+    name: Actions pinned to SHA
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Verify every `uses:` is pinned to a 40-char commit SHA
+        run: |
+          unpinned="$(grep -rnE '^[[:space:]]*-?[[:space:]]*uses:' .github/workflows \
+            | grep -vE 'uses:[[:space:]]*[^@]+@[0-9a-f]{40}([[:space:]]|#|$)' || true)"
+          if [ -n "$unpinned" ]; then
+            echo "::error::unpinned action reference(s); pin to a full commit SHA (ADR-0013):"
+            echo "$unpinned"
+            exit 1
+          fi
+          echo "all action references are SHA-pinned"
 
   docs:
     name: Docs (values.schema.json)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ env.HELM_VERSION }}
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
       - name: Run docs layer (schema)
@@ -58,8 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ env.HELM_VERSION }}
       - name: Install kubeconform
@@ -68,7 +87,7 @@ jobs:
             "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
           tar -C /usr/local/bin -xzf /tmp/kc.tgz kubeconform
           kubeconform -v
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
       - run: pip install pyyaml
@@ -80,13 +99,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ env.HELM_VERSION }}
       - name: Install helm-unittest plugin
         run: helm plugin install https://github.com/helm-unittest/helm-unittest
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
       - name: Run unit layer
@@ -103,12 +122,12 @@ jobs:
     timeout-minutes: 25
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ env.HELM_VERSION }}
       - name: Create kind cluster
-        uses: helm/kind-action@v1
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
         with:
           node_image: ${{ env.KIND_NODE_IMAGE }}
           cluster_name: dr-ci

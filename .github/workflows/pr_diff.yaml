@@ -10,8 +10,8 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
       - name: Run diff
         id: diff
         run: |
@@ -44,7 +44,7 @@ jobs:
           echo 'HELM_DIFF<<EOF' >> $GITHUB_ENV
           echo "$(diff -ur before after)" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
-      - uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0
+      - uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
         with:
           message: |
             Running a `helm template` smoketest on commit ${{ github.sha }} results in the following diff against `${{ github.base_ref }}`:
