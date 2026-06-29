@@ -39,6 +39,7 @@ spec:
           {{- if or (eq .Values.serviceAccount.create true) (ne .Values.serviceAccount.name "") }}
           serviceAccountName: {{ .Values.serviceAccount.name | default (include "docker-registry.fullname" .) }}
           {{- end }}
+          automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
           {{- if .Values.imagePullSecrets }}
           imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 12 }}
           {{- end }}
@@ -48,6 +49,18 @@ spec:
           {{- if .Values.securityContext.enabled }}
           securityContext: {{ omit .Values.securityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
+          {{- with .Values.initContainers }}
+          initContainers:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- /*
+            The garbage-collect Job intentionally omits some fields that the
+            long-running Deployment/StatefulSet pod template carries:
+            - extraContainers (sidecars): a sidecar that never exits keeps the pod
+              Running and prevents the Job from ever completing.
+            - ports / livenessProbe / readinessProbe: `registry garbage-collect` is a
+              one-shot batch command, not an HTTP server.
+          */}}
           containers:
             - name: {{ .Chart.Name }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -70,8 +83,12 @@ spec:
               {{- end }}
               volumeMounts: {{ include "docker-registry.volumeMounts" . | nindent 16 }}
           restartPolicy: {{ .Values.garbageCollect.restartPolicy }}
+          enableServiceLinks: {{ .Values.enableServiceLinks }}
           {{- if .Values.nodeSelector }}
           nodeSelector: {{ toYaml .Values.nodeSelector | nindent 12 }}
+          {{- end }}
+          {{- if .Values.topologySpreadConstraints }}
+          topologySpreadConstraints: {{ toYaml .Values.topologySpreadConstraints | nindent 12 }}
           {{- end }}
           {{- if .Values.garbageCollect.affinity }}
           affinity: {{ toYaml .Values.garbageCollect.affinity | nindent 12 }}

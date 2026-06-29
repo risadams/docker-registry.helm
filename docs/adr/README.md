@@ -29,6 +29,7 @@ context. Format: [Michael Nygard's ADR](https://cognitect.com/blog/2011/11/15/do
 | [0015](0015-pin-helm-unittest-plugin.md) | Pin the helm-unittest plugin version in CI |
 | [0016](0016-remove-pr-diff-workflow.md) | Remove the PR-diff smoketest workflow |
 | [0017](0017-shared-pod-template.md) | Share the pod template between Deployment and StatefulSet |
+| [0018](0018-cronjob-podspec-lockstep.md) | Align the garbage-collect CronJob pod spec with the workload |
 
 ## Adding an ADR
 
