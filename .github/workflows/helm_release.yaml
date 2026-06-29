@@ -1,7 +1,7 @@
 name: Release Charts
 
 env:
-  HELM_VERSION_TO_INSTALL: 3.14.0
+  HELM_VERSION_TO_INSTALL: 3.21.2
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}
 
 on:
