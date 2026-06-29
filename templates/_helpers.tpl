@@ -361,3 +361,86 @@ works as the "is TLS enabled?" check in an `if`.
 {{ toYaml . }}
 {{- end }}
 {{- end -}}
+
+{{/*
+The pod template (`spec.template`) shared by the Deployment and the StatefulSet.
+These two workloads differ only in kind and a few spec-level fields (strategy vs
+serviceName/updateStrategy, and the StatefulSet's volumeClaimTemplates); the pod
+template itself is identical, so it lives here as the single source. The body is
+emitted at the same indentation it had inline, so callers write `template:` then
+`{{- include "docker-registry.podTemplate" . }}` with no extra indent.
+*/}}
+{{- define "docker-registry.podTemplate" }}
+    metadata:
+      labels:
+        {{- include "docker-registry.match-labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if or (eq .Values.serviceAccount.create true) (ne .Values.serviceAccount.name "") }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default (include "docker-registry.fullname" .) }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: "{{ .Values.priorityClassName }}"
+      {{- end }}
+      {{- if .Values.securityContext.enabled }}
+      securityContext: {{ omit .Values.securityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+          - /bin/registry
+          - serve
+          - {{ .Values.configPath }}/config.yml
+          ports:
+            - containerPort: 5000
+            {{- if .Values.metrics.enabled }}
+            - containerPort: {{ include "docker-registry.metricsPort" . }}
+              name: http-metrics
+              protocol: TCP
+            {{- end }}
+{{ include "docker-registry.livenessProbe" . | indent 10 }}
+{{ include "docker-registry.readinessProbe" . | indent 10 }}
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          env: {{ include "docker-registry.envs" . | nindent 12 }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{ omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          volumeMounts: {{ include "docker-registry.volumeMounts" . | nindent 12 }}
+      enableServiceLinks: {{ .Values.enableServiceLinks }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml .Values.topologySpreadConstraints | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      volumes: {{ include "docker-registry.volumes" . | nindent 8 }}
+{{- end }}
