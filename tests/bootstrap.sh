@@ -17,6 +17,11 @@ set -euo pipefail
 HELM_MIN_MINOR="${HELM_MIN_MINOR:-11}"
 HELM_FALLBACK_VERSION="${HELM_FALLBACK_VERSION:-v3.21.2}"
 KUBECONFORM_VERSION="${KUBECONFORM_VERSION:-v0.8.0}"
+# helm-unittest plugin version, pinned to match CI (ci.yaml HELM_UNITTEST_VERSION).
+HELM_UNITTEST_VERSION="${HELM_UNITTEST_VERSION:-v1.1.1}"
+# kubeconform release these checksums correspond to. Verification is skipped (with a
+# warning) when KUBECONFORM_VERSION is overridden to anything else. Update both.
+KUBECONFORM_PINNED_VERSION="v0.8.0"
 
 log()  { printf '\033[0;36m[bootstrap]\033[0m %s\n' "$*"; }
 warn() { printf '\033[0;33m[bootstrap] WARN:\033[0m %s\n' "$*"; }
@@ -48,6 +53,38 @@ log "binary install dir: $BIN_DIR (OS=$OS ARCH=$ARCH)"
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# verify_sha256 <file> <expected_hex>: hard-fail on mismatch or missing tooling.
+verify_sha256() {
+  local file="$1" expected="$2" actual=""
+  if have sha256sum; then
+    actual="$(sha256sum "$file" | awk '{print $1}')"
+  elif have shasum; then
+    actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+  else
+    err "no sha256sum/shasum available to verify $file"; exit 1
+  fi
+  if [ "$actual" != "$expected" ]; then
+    err "checksum mismatch for $file"
+    err "  expected: $expected"
+    err "  actual:   $actual"
+    exit 1
+  fi
+}
+
+# SHA256 of the kubeconform-${OS}-${ARCH} asset for KUBECONFORM_PINNED_VERSION,
+# from the release CHECKSUMS file. Update together with KUBECONFORM_PINNED_VERSION.
+kubeconform_sha256() {
+  case "${OS}-${ARCH}" in
+    linux-amd64)   echo 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883 ;;
+    linux-arm64)   echo 1f53fc8e81258197a35e8603054162a5af1de8c5af13746c71ab680d9534ed87 ;;
+    darwin-amd64)  echo 71dbc87ac9f24099a62b93570e65aa06312ba6ac8aea63b7f86e9d999edf5a92 ;;
+    darwin-arm64)  echo f84f4dfbebf4a6b0b230385fa065a39ea35e02608c2b50d025dcf64775a69d67 ;;
+    windows-amd64) echo e3f56102bcf4f50b034a567e2482a1c5330799983ddd655952310211aef73d93 ;;
+    windows-arm64) echo 4f3c9889f5f3a1e4aba84f9212f599ad3164d1fb32175fba3a53b505b0fffd0f ;;
+    *)             echo "" ;;
+  esac
+}
+
 # --- helm --------------------------------------------------------------------
 helm_minor() { helm version --short 2>/dev/null | sed -E 's/^v?3\.([0-9]+)\..*/\1/; t; s/.*/0/'; }
 
@@ -73,9 +110,15 @@ log "helm: $(helm version --short)"
 if helm plugin list 2>/dev/null | grep -q '^unittest'; then
   log "helm-unittest: $(helm plugin list | awk '/^unittest/{print $2}')"
 else
-  log "installing helm-unittest plugin"
-  helm plugin install https://github.com/helm-unittest/helm-unittest >/dev/null 2>&1 \
-    || helm plugin install https://github.com/helm-unittest/helm-unittest
+  log "installing helm-unittest plugin $HELM_UNITTEST_VERSION"
+  # Pin the version for reproducibility. helm 4 requires plugin provenance
+  # verification or an explicit opt-out, and the plugin's git source has none, so
+  # fall back to --verify=false (an unknown flag on helm 3, where the first attempt
+  # already succeeds). The last attempt drops the redirect so errors are visible.
+  uurl="https://github.com/helm-unittest/helm-unittest"
+  helm plugin install "$uurl" --version "$HELM_UNITTEST_VERSION" >/dev/null 2>&1 \
+    || helm plugin install "$uurl" --version "$HELM_UNITTEST_VERSION" --verify=false >/dev/null 2>&1 \
+    || helm plugin install "$uurl" --version "$HELM_UNITTEST_VERSION"
   log "helm-unittest installed"
 fi
 
@@ -86,14 +129,21 @@ else
   log "installing kubeconform $KUBECONFORM_VERSION -> $BIN_DIR"
   tmp="$(mktemp -d)"
   if [ "$OS" = windows ]; then
-    curl -fsSL -m 120 -o "$tmp/kc.zip" \
-      "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-${OS}-${ARCH}.zip"
-    ( cd "$tmp" && unzip -oq kc.zip )
+    asset="kubeconform-${OS}-${ARCH}.zip"; out="$tmp/kc.zip"
   else
-    curl -fsSL -m 120 -o "$tmp/kc.tgz" \
-      "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-${OS}-${ARCH}.tar.gz"
-    ( cd "$tmp" && tar xzf kc.tgz )
+    asset="kubeconform-${OS}-${ARCH}.tar.gz"; out="$tmp/kc.tgz"
   fi
+  curl -fsSL -m 120 -o "$out" \
+    "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/${asset}"
+  # Verify the download against the pinned checksum before extracting/running it.
+  expected="$(kubeconform_sha256)"
+  if [ "$KUBECONFORM_VERSION" = "$KUBECONFORM_PINNED_VERSION" ] && [ -n "$expected" ]; then
+    verify_sha256 "$out" "$expected"
+    log "kubeconform checksum verified"
+  else
+    warn "no pinned checksum for kubeconform $KUBECONFORM_VERSION ($OS-$ARCH); skipping verification"
+  fi
+  if [ "$OS" = windows ]; then ( cd "$tmp" && unzip -oq kc.zip ); else ( cd "$tmp" && tar xzf kc.tgz ); fi
   cp "$tmp/kubeconform${EXE}" "$BIN_DIR/kubeconform${EXE}"
   rm -rf "$tmp"; hash -r 2>/dev/null || true
   log "kubeconform: $(kubeconform -v)"
