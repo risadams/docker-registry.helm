@@ -95,17 +95,18 @@ references that Secret instead of creating its own.
 {{- end -}}
 
 {{/*
-Create a livenessProbe.
-Allow the default value to be completely overridden by an optional value,
-while retaining the original livenessProbe logic.
+Render a probe block. The default probes the registry's HTTP(S) port on /; an
+explicit override value (e.g. .Values.livenessProbe) replaces the body entirely.
+Shared by the livenessProbe and readinessProbe helpers below.
+Usage: {{ include "docker-registry.probe" (dict "ctx" . "name" "livenessProbe" "override" .Values.livenessProbe) }}
 */}}
-{{- define "docker-registry.livenessProbe" -}}
-livenessProbe:
-{{- if .Values.livenessProbe }}
-{{ .Values.livenessProbe | toYaml | indent 2 }}
+{{- define "docker-registry.probe" -}}
+{{ .name }}:
+{{- if .override }}
+{{ .override | toYaml | indent 2 }}
 {{- else }}
   httpGet:
-{{- if (include "docker-registry.tlsSecretName" .) }}
+{{- if (include "docker-registry.tlsSecretName" .ctx) }}
     scheme: HTTPS
 {{- end }}
     path: /
@@ -114,22 +115,19 @@ livenessProbe:
 {{- end -}}
 
 {{/*
-Create a readinessProbe.
-Allow the default value to be completely overridden by an optional value,
-while retaining the original readinessProbe logic.
+Create a livenessProbe. Allow the default to be completely overridden by an
+optional .Values.livenessProbe, while retaining the original probe logic.
+*/}}
+{{- define "docker-registry.livenessProbe" -}}
+{{- include "docker-registry.probe" (dict "ctx" . "name" "livenessProbe" "override" .Values.livenessProbe) -}}
+{{- end -}}
+
+{{/*
+Create a readinessProbe. Allow the default to be completely overridden by an
+optional .Values.readinessProbe, while retaining the original probe logic.
 */}}
 {{- define "docker-registry.readinessProbe" -}}
-readinessProbe:
-{{- if .Values.readinessProbe }}
-{{ .Values.readinessProbe | toYaml | indent 2 }}
-{{- else }}
-  httpGet:
-{{- if (include "docker-registry.tlsSecretName" .) }}
-    scheme: HTTPS
-{{- end }}
-    path: /
-    port: 5000
-{{- end -}}
+{{- include "docker-registry.probe" (dict "ctx" . "name" "readinessProbe" "override" .Values.readinessProbe) -}}
 {{- end -}}
 
 {{/*
