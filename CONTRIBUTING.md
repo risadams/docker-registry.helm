@@ -17,10 +17,31 @@ skim them before proposing structural changes.
 
 ## Ways to contribute
 
+Code is only one way to help, and every item below moves the project forward.
+
+### Code & docs
+
 - **Report a bug** or **request a feature** via the
   [issue templates](https://github.com/risadams/docker-registry.helm/issues/new/choose).
 - **Open a pull request** for fixes, features, docs, or tests.
 - **Improve documentation** — see the docs contract below.
+
+### No code required
+
+- **Triage issues** — reproduce reported bugs, add missing detail, or confirm
+  whether an issue still applies to the current release.
+- **Answer questions** and help other users in
+  [issues](https://github.com/risadams/docker-registry.helm/issues) and
+  [discussions](https://github.com/risadams/docker-registry.helm/discussions).
+- **Share your experience** — real-world `values.yaml` setups, upgrade notes, or
+  gotchas make the docs better for everyone.
+- **Review open pull requests** — a second pair of eyes on rendered output or a
+  values change is always welcome.
+- **Spread the word** — star the repo, write a blog post, or mention the chart
+  where people are looking for a registry deployment.
+- **Report a security concern** privately per [SECURITY.md](SECURITY.md).
+
+Prefer to support the work financially? See [Support the project](#support-the-project).
 
 ## Development setup
 
@@ -91,6 +112,18 @@ The chart follows [SemVer](https://semver.org/). `version` is the chart version;
 `appVersion` tracks the upstream `registry` image. Releases are published by a
 maintainer via the **Release Charts** workflow, which pushes to the GitHub Pages
 Helm repository and the GHCR OCI registry.
+
+## Support the project
+
+This chart is maintained on volunteer time. If it saves you or your team effort,
+sponsorship helps fund ongoing maintenance, releases, and support:
+
+- **[GitHub Sponsors](https://github.com/sponsors/risadams)** — one-time or
+  recurring, any amount.
+
+Sponsorship is entirely optional and never buys priority or influence over the
+roadmap — every issue and PR is weighed on its merits. If money isn't an option,
+the [no-code contributions](#no-code-required) above are just as valuable.
 
 ## Code of Conduct
 
