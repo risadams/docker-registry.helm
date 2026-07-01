@@ -1,11 +1,3 @@
-<p align="center">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="72" height="72" fill="none">
-    <polygon points="24,7 35,13.5 35,28.5 24,35 13,28.5 13,13.5" fill="#1a5b6e" opacity=".55"/>
-    <polygon points="22,5 33,11.5 33,26.5 22,33 11,26.5 11,11.5" fill="#CB0162"/>
-    <text x="22" y="23.5" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600" fill="#faf6ef" letter-spacing="-0.5">DR</text>
-  </svg>
-</p>
-
 # Docker Registry Helm Chart
 
 A Helm chart for deploying a private [Docker Registry](https://distribution.github.io/distribution/)
@@ -18,7 +10,7 @@ A Helm chart for deploying a private [Docker Registry](https://distribution.gith
 > [upstream repository](https://github.com/twuni/docker-registry.helm).
 
 [![Docs site](https://img.shields.io/badge/docs-risadams.github.io%2Fdocker--registry.helm-CB0162?style=flat-square)](https://risadams.github.io/docker-registry.helm/)
-![Version: 4.0.1](https://img.shields.io/badge/Version-4.0.1-informational?style=flat-square)
+![Version: 4.0.2](https://img.shields.io/badge/Version-4.0.2-informational?style=flat-square)
 ![AppVersion: 3.1.1](https://img.shields.io/badge/AppVersion-3.1.1-informational?style=flat-square)
 
 ## Prerequisites
