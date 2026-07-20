@@ -81,7 +81,7 @@ jobs:
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           version: ${{ matrix.helm }}
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Run docs layer (schema)
@@ -107,7 +107,7 @@ jobs:
           echo "${KUBECONFORM_SHA256}  /tmp/kc.tgz" | sha256sum -c -
           tar -C /usr/local/bin -xzf /tmp/kc.tgz kubeconform
           kubeconform -v
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - run: pip install pyyaml
@@ -133,7 +133,7 @@ jobs:
         run: |
           helm plugin install https://github.com/helm-unittest/helm-unittest --version "${HELM_UNITTEST_VERSION}" \
             || helm plugin install https://github.com/helm-unittest/helm-unittest --version "${HELM_UNITTEST_VERSION}" --verify=false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Run unit layer
