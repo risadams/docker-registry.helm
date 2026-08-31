@@ -64,7 +64,7 @@ jobs:
       # clean-exclude ensures chart-releaser artifacts are never deleted even
       # if they were not successfully copied (belt-and-suspenders).
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4
         with:
           folder: docs-site/build
           branch: gh-pages
