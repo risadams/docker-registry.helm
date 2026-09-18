@@ -5,7 +5,16 @@ env:
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}
 
 on:
+  # Releases when the chart version changes on main; manual runs remain for retries.
+  push:
+    branches: [main]
+    paths:
+      - 'Chart.yaml'
   workflow_dispatch:
+
+concurrency:
+  group: helm-release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -29,16 +38,52 @@ jobs:
         with:
           install_only: true
 
-      - name: Run chart-releaser
+      # Immutable releases lock as soon as they are published, so assets must be
+      # attached while the release is still a draft. chart-releaser's own
+      # `cr upload` creates the release published and then uploads (fails with
+      # 422 on immutable repos), so we create/upload/publish with gh instead and
+      # use cr only to package and build the index.
+      - name: Package charts
+        run: cr package
+
+      - name: Create GitHub releases (draft, upload, publish)
         env:
-          # Same-repo publishing only needs the built-in token (a CR_TOKEN PAT is
-          # required solely for cross-repo releases). contents:write is granted above.
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(.cr-release-packages/*.tgz)
+          [ ${#packages[@]} -gt 0 ] || { echo "::error::No chart packages found"; exit 1; }
+          for pkg in "${packages[@]}"; do
+            version=$(tar -xzOf "$pkg" --wildcards '*/Chart.yaml' | sed -n 's/^version: *//p' | head -n1)
+            tag="v${version}"
+            state=$(gh release view "$tag" --json isDraft,assets --jq '"\(.isDraft) \(.assets | length)"' 2>/dev/null || echo "missing")
+            case "$state" in
+              missing)
+                gh release create "$tag" "$pkg" --draft --target main --generate-notes --title "$tag"
+                gh release edit "$tag" --draft=false
+                ;;
+              "true "*)
+                # Leftover draft from an interrupted run: finish it.
+                gh release upload "$tag" "$pkg" --clobber
+                gh release edit "$tag" --draft=false
+                ;;
+              "false 0")
+                echo "::error::Release $tag is published with no assets and is immutable. Bump the chart version."
+                exit 1
+                ;;
+              *)
+                echo "Release $tag already published with assets; skipping."
+                ;;
+            esac
+          done
+
+      - name: Update Helm repo index
+        env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         run: |
           owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
           repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
-          cr package
-          cr upload --owner="$owner" --git-repo "$repo" --token="$CR_TOKEN" --release-name-template="v{{ .Version }}" --packages-with-index --push --skip-existing --generate-release-notes --commit main
           cr index --owner="$owner" --git-repo "$repo" --token="$CR_TOKEN" --release-name-template="v{{ .Version }}" --packages-with-index --push --index-path="."
 
       - name: Install Helm
@@ -52,3 +97,25 @@ jobs:
           helm package "${{ github.workspace }}/"
           package=$(ls -t docker-registry-*.tgz | head -n 1)
           helm push "${package}" "oci://${{ env.GHCR_IMAGE }}"
+
+      # Download the chart the way a user would. GitHub Pages can lag the
+      # gh-pages push by a few minutes, so retry before failing.
+      - name: Verify chart is installable from the Helm repo
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version: *//p' Chart.yaml | head -n1)
+          owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
+          repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
+          url="https://${owner}.github.io/${repo}"
+          for attempt in $(seq 1 10); do
+            rm -rf "$RUNNER_TEMP/verify"
+            helm repo add verify-repo "$url" --force-update >/dev/null
+            if helm pull verify-repo/docker-registry --version "$version" --destination "$RUNNER_TEMP/verify"; then
+              echo "docker-registry ${version} is downloadable from ${url}"
+              exit 0
+            fi
+            echo "Attempt ${attempt}/10 failed; waiting for GitHub Pages..."
+            sleep 30
+          done
+          echo "::error::docker-registry ${version} is not downloadable from ${url}"
+          exit 1
