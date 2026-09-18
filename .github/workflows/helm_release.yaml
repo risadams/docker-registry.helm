@@ -159,7 +159,7 @@ jobs:
           repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
           url="https://${owner}.github.io/${repo}"
           for attempt in $(seq 1 10); do
-            rm -rf "$RUNNER_TEMP/verify"
+            rm -rf "$RUNNER_TEMP/verify"; mkdir -p "$RUNNER_TEMP/verify"
             helm repo add verify-repo "$url" --force-update >/dev/null
             if helm pull verify-repo/docker-registry --version "$version" --destination "$RUNNER_TEMP/verify"; then
               echo "docker-registry ${version} is downloadable from ${url}"
