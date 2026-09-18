@@ -6,6 +6,18 @@
 
 ---
 
+## 4.0.3
+
+Release-pipeline fix. **No chart changes** from 4.0.2. The 4.0.2 GitHub release was
+published without its chart package (the repository uses immutable releases), so 4.0.2
+is missing from the Helm repository index; it remains available via OCI
+(`oci://ghcr.io/risadams/docker-registry`). The release workflow now attaches the
+package to a draft release before publishing it, and verifies the chart appears in
+`index.yaml` (#34). Releases now run automatically when the chart `version` changes on
+`main`, and finish by running `helm pull` against the published Helm repo.
+
+---
+
 ## 4.0.2
 
 Maintainability, security, and tooling release. **No breaking changes** — selector
