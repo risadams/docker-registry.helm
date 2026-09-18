@@ -24,6 +24,8 @@ concurrency:
 jobs:
   ci:
     name: CI
+    # ci.yaml declares read-all; the caller must grant at least that.
+    permissions: read-all
     uses: ./.github/workflows/ci.yaml
 
   release:
