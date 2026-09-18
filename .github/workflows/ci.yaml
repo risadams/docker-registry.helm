@@ -62,13 +62,13 @@ jobs:
       - name: Verify every `uses:` is pinned to a 40-char commit SHA
         run: |
           unpinned="$(grep -rnE '^[[:space:]]*-?[[:space:]]*uses:' .github/workflows \
-            | grep -vE 'uses:[[:space:]]*[^@]+@[0-9a-f]{40}([[:space:]]|#|$)' || true)"
+            | grep -vE 'uses:[[:space:]]*[^@]+@[0-9a-f]{40}([[:space:]]|#|$)'             | grep -vE 'uses:[[:space:]]*\./' || true)"
           if [ -n "$unpinned" ]; then
             echo "::error::unpinned action reference(s); pin to a full commit SHA (ADR-0013):"
             echo "$unpinned"
             exit 1
           fi
-          echo "all action references are SHA-pinned"
+          echo "all action references are SHA-pinned (local ./ workflow references are exempt)"
 
   docs:
     name: Docs (values.schema.json, helm ${{ matrix.helm }})
