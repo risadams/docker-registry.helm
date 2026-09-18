@@ -9,6 +9,8 @@ name: CI
     branches:
       - "**"
   workflow_dispatch:
+  # Called by helm_release.yaml so a release only proceeds when CI passes.
+  workflow_call:
 concurrency:
   group: ${{ github.event_name }}-${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
