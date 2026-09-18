@@ -107,6 +107,27 @@ jobs:
           repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
           cr index --owner="$owner" --git-repo "$repo" --token="$CR_TOKEN" --release-name-template="v{{ .Version }}" --packages-with-index --push --index-path="."
 
+      # The index (--packages-with-index) points at the Pages site, so the
+      # packages must be on gh-pages too. `cr upload` used to do this; we no
+      # longer call it. Idempotent: only adds packages that are missing.
+      - name: Publish packages to gh-pages
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          git worktree add "$RUNNER_TEMP/gh-pages" origin/gh-pages --detach
+          cd "$RUNNER_TEMP/gh-pages"
+          for pkg in "$GITHUB_WORKSPACE"/.cr-release-packages/*.tgz; do
+            [ -e "$(basename "$pkg")" ] || cp "$pkg" .
+          done
+          git add -- '*.tgz'
+          if git diff --cached --quiet; then
+            echo "gh-pages already has all packages"
+          else
+            git commit -m "Add chart packages for ${GITHUB_SHA::7}"
+            git push origin HEAD:gh-pages
+          fi
+
       - name: Install Helm
         if: ${{ !inputs.dry_run }}
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
